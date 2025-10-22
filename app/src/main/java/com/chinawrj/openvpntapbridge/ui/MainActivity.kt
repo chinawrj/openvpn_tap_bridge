@@ -17,6 +17,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.chinawrj.openvpntapbridge.R
+import com.chinawrj.openvpntapbridge.core.FileReaders
 import com.chinawrj.openvpntapbridge.core.IfaceMonitor
 import com.chinawrj.openvpntapbridge.core.UiModel
 import com.chinawrj.openvpntapbridge.data.AppPreferences
@@ -70,6 +71,8 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         monitor?.stop()
+        // 关闭root shell会话
+        FileReaders.closeRootShell()
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {

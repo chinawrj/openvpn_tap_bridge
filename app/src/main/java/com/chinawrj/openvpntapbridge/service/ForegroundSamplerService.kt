@@ -10,6 +10,7 @@ import androidx.core.app.NotificationCompat
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
 import com.chinawrj.openvpntapbridge.R
+import com.chinawrj.openvpntapbridge.core.FileReaders
 import com.chinawrj.openvpntapbridge.core.IfaceMonitor
 import com.chinawrj.openvpntapbridge.core.UiModel
 import com.chinawrj.openvpntapbridge.data.AppPreferences
@@ -69,6 +70,8 @@ class ForegroundSamplerService : LifecycleService() {
         Log.d(TAG, "Service onDestroy")
         monitor?.stop()
         monitor = null
+        // 关闭root shell会话
+        FileReaders.closeRootShell()
     }
 
     override fun onBind(intent: Intent): IBinder? {
