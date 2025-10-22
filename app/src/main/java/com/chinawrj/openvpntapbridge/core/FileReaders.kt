@@ -149,7 +149,7 @@ object FileReaders {
 
         // Try using root permission to check
         val result = executeInRootShell("[ -e '$path' ] && echo '1' || echo '0'")
-        return result?.trim() == "exists"
+        return result?.trim() == "1"
     }
 
     /**
