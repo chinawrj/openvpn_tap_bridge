@@ -1,0 +1,42 @@
+<resources>
+    <string name="app_name">OpenVPN TAP Bridge</string>
+    
+    <!-- Main Activity -->
+    <string name="status_title">接口状态</string>
+    <string name="interface_label">接口:</string>
+    <string name="status_label">状态:</string>
+    <string name="status_up">UP</string>
+    <string name="status_down">DOWN</string>
+    <string name="carrier_label">载波:</string>
+    <string name="carrier_on">有载波</string>
+    <string name="carrier_off">无载波</string>
+    <string name="bridge_label">网桥:</string>
+    <string name="in_bridge">在 %s 中</string>
+    <string name="not_in_bridge">未桥接</string>
+    <string name="default_route_label">默认路由:</string>
+    <string name="is_default_route">是</string>
+    <string name="not_default_route">否</string>
+    <string name="speed_title">网络速率</string>
+    <string name="rx_speed_label">下行速率:</string>
+    <string name="tx_speed_label">上行速率:</string>
+    <string name="speed_calculating">计算中...</string>
+    <string name="packets_title">累积流量</string>
+    <string name="rx_packets_label">累积接收:</string>
+    <string name="tx_packets_label">累积发送:</string>
+    <string name="bridge_ports_title">网桥端口</string>
+    <string name="port_up">UP</string>
+    <string name="port_down">DOWN</string>
+    <string name="interface_not_found">接口不存在</string>
+    <string name="interface_waiting">等待接口创建...</string>
+    <string name="menu_settings">设置</string>
+    <string name="menu_start_service">启动服务</string>
+    <string name="menu_stop_service">停止服务</string>
+    
+    <!-- Settings Activity -->
+    <string name="settings_title">设置</string>
+    <string name="interface_name_title">接口名称</string>
+    <string name="interface_name_hint">例如: tap0, tun0</string>
+    <string name="save">保存</string>
+    <string name="cancel">取消</string>
+    <string name="saved_successfully">设置已保存</string>
+</resources>
