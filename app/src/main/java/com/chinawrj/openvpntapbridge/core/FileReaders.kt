@@ -8,21 +8,21 @@ import java.io.InputStreamReader
 import java.io.OutputStreamWriter
 
 /**
- * 文件读取工具
- * 提供安全的文件读取功能，支持root权限读取
- * 使用持久的root shell会话，避免频繁请求root权限
+ * File reading utility
+ * Provides safe file reading functionality with root permission support
+ * Uses persistent root shell session to avoid frequent root permission requests
  */
 object FileReaders {
     private const val TAG = "FileReaders"
     
-    // 持久的root shell进程
+    // Persistent root shell process
     private var rootProcess: Process? = null
     private var rootWriter: BufferedWriter? = null
     private var rootReader: BufferedReader? = null
     private var useRoot = false
 
     /**
-     * 初始化root shell会话（只调用一次su）
+     * Initialize root shell session (call su only once)
      */
     private fun initRootShell(): Boolean {
         if (rootProcess != null && rootProcess?.isAlive == true) {
@@ -46,7 +46,7 @@ object FileReaders {
     }
 
     /**
-     * 使用持久的root shell执行命令
+     * Execute command using persistent root shell
      */
     private fun executeInRootShell(command: String): String? {
         if (!useRoot && !initRootShell()) {
@@ -58,14 +58,14 @@ object FileReaders {
                 val writer = rootWriter ?: return null
                 val reader = rootReader ?: return null
 
-                // 发送命令
+                // Send command
                 writer.write(command)
                 writer.newLine()
                 writer.write("echo '<<<END_OF_COMMAND>>>'")
                 writer.newLine()
                 writer.flush()
 
-                // 读取输出直到结束标记
+                // Read output until end marker
                 val output = StringBuilder()
                 while (true) {
                     val line = reader.readLine() ?: break
@@ -82,14 +82,14 @@ object FileReaders {
             }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to execute in root shell: $command", e)
-            // 如果出错，重置root shell
+            // If error occurs, reset root shell
             closeRootShell()
             null
         }
     }
 
     /**
-     * 关闭root shell会话
+     * Close root shell session
      */
     fun closeRootShell() {
         try {
@@ -108,19 +108,19 @@ object FileReaders {
     }
 
     /**
-     * 安全读取文本文件
-     * 优先尝试直接读取，失败则尝试使用root权限
+     * Safely read text file
+     * Try direct read first, fall back to root permission on failure
      */
     fun readTextSafe(path: String): String {
-        // 先尝试直接读取
+        // Try direct read first
         try {
             val text = File(path).readText().trim()
             return text
         } catch (e: Exception) {
-            // 直接读取失败，使用root
+            // Direct read failed, use root
         }
 
-        // 尝试使用root权限
+        // Try using root permission
         val text = executeInRootShell("cat '$path'")?.trim()
         if (text != null) {
             return text
@@ -131,7 +131,7 @@ object FileReaders {
     }
 
     /**
-     * 安全读取Long值
+     * Safely read Long value
      */
     fun readLongSafe(path: String): Long {
         val text = readTextSafe(path)
@@ -139,49 +139,43 @@ object FileReaders {
     }
 
     /**
-     * 检查文件/目录是否存在
+     * Check if file/directory exists
      */
     fun exists(path: String): Boolean {
-        // 先尝试直接检查
+        // Try direct check first
         if (File(path).exists()) {
             return true
         }
 
-        // 尝试使用root权限检查
-        val result = executeInRootShell("test -e '$path' && echo 'exists' || echo 'notfound'")
+        // Try using root permission to check
+        val result = executeInRootShell("[ -e '$path' ] && echo '1' || echo '0'")
         return result?.trim() == "exists"
     }
 
     /**
-     * 读取符号链接的目标
+     * Read symbolic link target
      */
-    fun readSymbolicLink(path: String): String {
-        // 使用root权限读取（不使用 -f 参数以保留相对路径）
-        val target = executeInRootShell("readlink '$path'")?.trim()
-        if (target != null) {
-            return target
-        }
-
-        Log.w(TAG, "Failed to read symlink $path")
-        return ""
+    fun readlink(path: String): String? {
+        // Use root permission to read (don't use -f parameter to preserve relative path)
+        return executeInRootShell("readlink '$path'")
     }
 
     /**
-     * 列出目录中的所有文件/子目录
+     * List all files/subdirectories in directory
      */
-    fun listDirectory(path: String): List<String> {
-        // 先尝试直接读取
+    fun listDir(path: String): List<String> {
+        // Try direct read first
         try {
             val files = File(path).listFiles()
             if (files != null) {
                 val names = files.map { it.name }
-                return names
+                return names.toList()
             }
         } catch (e: Exception) {
-            // 直接读取失败，使用root
+            // Direct read failed, use root
         }
 
-        // 使用root权限读取
+        // Use root permission to read
         val output = executeInRootShell("ls '$path'")
         if (output != null) {
             val names = output.lines().filter { it.isNotBlank() }

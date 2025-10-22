@@ -26,14 +26,14 @@ import com.chinawrj.openvpntapbridge.utils.FormatUtils
 import com.google.android.material.card.MaterialCardView
 
 /**
- * 主界面
- * 显示网络接口状态和速率信息
+ * Main activity
+ * Display network interface status and rate information
  */
 class MainActivity : AppCompatActivity() {
     private lateinit var prefs: AppPreferences
     private var monitor: IfaceMonitor? = null
 
-    // UI 组件
+    // UI components
     private lateinit var tvInterfaceName: TextView
     private lateinit var tvStatus: TextView
     private lateinit var tvCarrier: TextView
@@ -55,23 +55,23 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // 初始化配置
+        // Initialize configuration
         prefs = AppPreferences.getInstance(this)
 
-        // 绑定视图
+        // Bind views
         bindViews()
 
-        // 请求通知权限 (Android 13+)
+        // Request notification permission (Android 13+)
         requestNotificationPermissionIfNeeded()
 
-        // 启动监控
+        // Start monitoring
         startMonitoring()
     }
 
     override fun onDestroy() {
         super.onDestroy()
         monitor?.stop()
-        // 关闭root shell会话
+        // Close root shell session
         FileReaders.closeRootShell()
     }
 
@@ -88,12 +88,12 @@ class MainActivity : AppCompatActivity() {
             }
             R.id.action_start_service -> {
                 ForegroundSamplerService.start(this)
-                Toast.makeText(this, "服务已启动", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Service started", Toast.LENGTH_SHORT).show()
                 true
             }
             R.id.action_stop_service -> {
                 ForegroundSamplerService.stop(this)
-                Toast.makeText(this, "服务已停止", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Service stopped", Toast.LENGTH_SHORT).show()
                 true
             }
             else -> super.onOptionsItemSelected(item)
@@ -125,67 +125,67 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateUI(model: UiModel) {
-        // 更新接口名称
+        // Update interface name
         tvInterfaceName.text = prefs.interfaceName
 
         if (!model.exists) {
-            // 接口不存在
+            // Interface does not exist
             showMessage(getString(R.string.interface_waiting))
             setFieldsEnabled(false)
             cardBridgePorts.visibility = View.GONE
             return
         }
 
-        // 接口存在，隐藏提示信息
+        // Interface exists, hide message
         hideMessage()
         setFieldsEnabled(true)
 
-        // 更新状态
+        // Update status
         val statusText: String
         val statusColor: Int
         if (model.up && model.carrier) {
             statusText = "● ${getString(R.string.status_up)}"
-            statusColor = Color.parseColor("#4CAF50") // 绿色
+            statusColor = Color.parseColor("#4CAF50") // Green
         } else {
             statusText = "○ ${getString(R.string.status_down)}"
-            statusColor = Color.parseColor("#9E9E9E") // 灰色
+            statusColor = Color.parseColor("#9E9E9E") // Gray
         }
         tvStatus.text = statusText
         tvStatus.setTextColor(statusColor)
 
-        // 更新载波
+        // Update carrier
         tvCarrier.text = if (model.carrier) {
             getString(R.string.carrier_on)
         } else {
             getString(R.string.carrier_off)
         }
 
-        // 更新网桥
+        // Update bridge
         tvBridge.text = if (model.inBridge && model.bridgeName != null) {
             getString(R.string.in_bridge, model.bridgeName)
         } else {
             getString(R.string.not_in_bridge)
         }
 
-        // 更新默认路由
+        // Update default route
         tvDefaultRoute.text = if (model.isDefaultRoute) {
             getString(R.string.is_default_route)
         } else {
             getString(R.string.not_default_route)
         }
 
-        // 更新速率
+        // Update rate
         tvRxSpeed.text = model.rxBps?.let { FormatUtils.formatBps(it) }
             ?: getString(R.string.speed_calculating)
 
         tvTxSpeed.text = model.txBps?.let { FormatUtils.formatBps(it) }
             ?: getString(R.string.speed_calculating)
 
-        // 更新累积流量（字节数）
+        // Update cumulative traffic (bytes)
         tvRxPackets.text = FormatUtils.formatBytes(model.rxBytes)
         tvTxPackets.text = FormatUtils.formatBytes(model.txBytes)
 
-        // 更新网桥端口列表
+        // Update bridge port list
         updateBridgePorts(model)
     }
 
@@ -199,7 +199,7 @@ class MainActivity : AppCompatActivity() {
         layoutBridgePorts.removeAllViews()
 
         model.bridgePorts.forEach { port ->
-            // 创建单行显示的布局
+            // Create single-line layout
             val portView = LinearLayout(this).apply {
                 orientation = LinearLayout.HORIZONTAL
                 layoutParams = LinearLayout.LayoutParams(
@@ -210,7 +210,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
-            // 端口名称
+            // Port name
             val nameTextView = TextView(this).apply {
                 text = port.name
                 textSize = 14f
@@ -221,7 +221,7 @@ class MainActivity : AppCompatActivity() {
                 )
             }
 
-            // 状态
+            // Status
             val statusTextView = TextView(this).apply {
                 val statusText = if (port.up) {
                     getString(R.string.port_up)
@@ -229,9 +229,9 @@ class MainActivity : AppCompatActivity() {
                     getString(R.string.port_down)
                 }
                 val statusColor = if (port.up) {
-                    Color.parseColor("#4CAF50") // 绿色
+                    Color.parseColor("#4CAF50") // Green
                 } else {
-                    Color.parseColor("#9E9E9E") // 灰色
+                    Color.parseColor("#9E9E9E") // Gray
                 }
 
                 text = statusText
@@ -249,7 +249,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // 扩展函数：dp转px
+    // Extension function: dp to px
     private fun Int.dpToPx(): Int {
         return (this * resources.displayMetrics.density).toInt()
     }
@@ -299,7 +299,7 @@ class MainActivity : AppCompatActivity() {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == REQUEST_NOTIFICATION_PERMISSION) {
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                Toast.makeText(this, "通知权限已授予", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Notification permission granted", Toast.LENGTH_SHORT).show()
             }
         }
     }

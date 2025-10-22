@@ -4,30 +4,30 @@ import android.util.Log
 import kotlinx.coroutines.*
 
 /**
- * UI数据模型
+ * UI data model
  */
 data class UiModel(
-    val exists: Boolean,          // 接口是否存在
-    val up: Boolean,              // 接口是否UP
-    val carrier: Boolean,         // 是否有载波
-    val inBridge: Boolean,        // 是否在网桥中
-    val bridgeName: String?,      // 所属网桥名称
-    val isDefaultRoute: Boolean,  // 是否承载默认路由
-    val rxBps: Long?,             // 接收速率 (bps)，null表示首次采样
-    val txBps: Long?,             // 发送速率 (bps)，null表示首次采样
-    val rxBytes: Long,            // 累积接收字节数
-    val txBytes: Long,            // 累积发送字节数
-    val bridgePorts: List<BridgePort>  // 网桥的所有端口
+    val exists: Boolean,          // Whether interface exists
+    val up: Boolean,              // Whether interface is UP
+    val carrier: Boolean,         // Whether carrier is present
+    val inBridge: Boolean,        // Whether in bridge
+    val bridgeName: String?,      // Bridge name it belongs to
+    val isDefaultRoute: Boolean,  // Whether it carries default route
+    val rxBps: Long?,             // Receive rate (bps), null for first sampling
+    val txBps: Long?,             // Transmit rate (bps), null for first sampling
+    val rxBytes: Long,            // Cumulative received bytes
+    val txBytes: Long,            // Cumulative transmitted bytes
+    val bridgePorts: List<BridgePort>  // All ports of the bridge
 )
 
 /**
- * 接口监控器
- * 负责周期性采样网络接口状态并推送到UI
+ * Interface monitor
+ * Periodically samples network interface status and pushes to UI
  */
 class IfaceMonitor(
-    private val iface: () -> String,           // 支持动态修改接口名
-    private val onUpdate: (UiModel) -> Unit,   // 推送到UI的回调
-    private val scope: CoroutineScope          // 协程作用域
+    private val iface: () -> String,           // Support dynamic interface name changes
+    private val onUpdate: (UiModel) -> Unit,   // Callback to push to UI
+    private val scope: CoroutineScope          // Coroutine scope
 ) {
     private val TAG = "IfaceMonitor"
     private val rateMeter = RateMeter()
@@ -35,9 +35,9 @@ class IfaceMonitor(
     private var wasExists = false
 
     /**
-     * 启动监控
-     * @param pollMsActive 接口存在且活跃时的轮询间隔（毫秒）
-     * @param pollMsIdle 接口不存在或不活跃时的轮询间隔（毫秒）
+     * Start monitoring
+     * @param pollMsActive Polling interval (milliseconds) when interface exists and is active
+     * @param pollMsIdle Polling interval (milliseconds) when interface does not exist or is inactive
      */
     fun start(pollMsActive: Long = 1000, pollMsIdle: Long = 2500) {
         stop()
@@ -50,14 +50,14 @@ class IfaceMonitor(
                 val snapshot = IfaceReader.read(currentIface)
                 val now = System.currentTimeMillis()
 
-                // 如果接口从不存在变为存在，或从存在变为不存在，重置速率计量器
+                // If interface changed from non-existent to existent, or from existent to non-existent, reset rate meter
                 if (snapshot.exists != wasExists) {
                     Log.d(TAG, "Interface state changed: exists=${snapshot.exists}")
                     rateMeter.reset()
                     wasExists = snapshot.exists
                 }
 
-                // 计算速率
+                // Calculate rate
                 val bps = if (snapshot.exists) {
                     rateMeter.sample(now, snapshot.rxBytes, snapshot.txBytes)
                 } else {
@@ -65,7 +65,7 @@ class IfaceMonitor(
                     null
                 }
 
-                // 构建UI模型
+                // Build UI model
                 val uiModel = UiModel(
                     exists = snapshot.exists,
                     up = snapshot.up,
@@ -80,12 +80,12 @@ class IfaceMonitor(
                     bridgePorts = snapshot.bridgePorts
                 )
 
-                // 推送到UI
+                // Push to UI
                 withContext(Dispatchers.Main) {
                     onUpdate(uiModel)
                 }
 
-                // 根据接口状态决定下次轮询间隔
+                // Decide next polling interval based on interface status
                 val nextPollMs = if (snapshot.exists && (snapshot.up || snapshot.carrier)) {
                     pollMsActive
                 } else {
@@ -100,7 +100,7 @@ class IfaceMonitor(
     }
 
     /**
-     * 停止监控
+     * Stop monitoring
      */
     fun stop() {
         job?.cancel()
@@ -111,7 +111,7 @@ class IfaceMonitor(
     }
 
     /**
-     * 是否正在运行
+     * Whether currently running
      */
     fun isRunning(): Boolean = job?.isActive == true
 }

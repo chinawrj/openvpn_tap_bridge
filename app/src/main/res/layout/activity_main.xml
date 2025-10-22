@@ -12,7 +12,7 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- 接口信息卡片 -->
+        <!-- Interface information card -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -34,7 +34,7 @@
                     android:textStyle="bold"
                     android:layout_marginBottom="16dp"/>
 
-                <!-- 接口名称 -->
+                <!-- Interface name -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -57,7 +57,7 @@
                         tools:text="tap0"/>
                 </LinearLayout>
 
-                <!-- 状态 -->
+                <!-- Status -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -80,7 +80,7 @@
                         tools:text="● UP"/>
                 </LinearLayout>
 
-                <!-- 载波 -->
+                <!-- Carrier -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -99,10 +99,10 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:textSize="14sp"
-                        tools:text="有载波"/>
+                        tools:text="Carrier On"/>
                 </LinearLayout>
 
-                <!-- 网桥 -->
+                <!-- Bridge -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -121,10 +121,10 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:textSize="14sp"
-                        tools:text="在 br0 中"/>
+                        tools:text="In br0"/>
                 </LinearLayout>
 
-                <!-- 默认路由 -->
+                <!-- Default route -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -142,12 +142,12 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:textSize="14sp"
-                        tools:text="是"/>
+                        tools:text="Yes"/>
                 </LinearLayout>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- 速率信息卡片 -->
+        <!-- Speed information card -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -169,7 +169,7 @@
                     android:textStyle="bold"
                     android:layout_marginBottom="16dp"/>
 
-                <!-- 下行速率 -->
+                <!-- Download speed -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -189,10 +189,10 @@
                         android:layout_height="wrap_content"
                         android:textSize="14sp"
                         android:textStyle="bold"
-                        tools:text="1.5 Mbps"/>
+                        tools:text="12.5 Mbps"/>
                 </LinearLayout>
 
-                <!-- 上行速率 -->
+                <!-- Upload speed -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -216,7 +216,7 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- 包统计信息卡片 -->
+        <!-- Packet statistics card -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -238,7 +238,7 @@
                     android:textStyle="bold"
                     android:layout_marginBottom="16dp"/>
 
-                <!-- 接收包数 -->
+                <!-- Received packets -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -258,10 +258,10 @@
                         android:layout_height="wrap_content"
                         android:textSize="14sp"
                         android:textStyle="bold"
-                        tools:text="1.2M"/>
+                        tools:text="1.2 MB"/>
                 </LinearLayout>
 
-                <!-- 发送包数 -->
+                <!-- Transmitted packets -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -285,7 +285,7 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- 网桥端口卡片 -->
+        <!-- Bridge ports card -->
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/cardBridgePorts"
             android:layout_width="match_parent"
@@ -318,7 +318,7 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- 提示信息 -->
+        <!-- Prompt information -->
         <TextView
             android:id="@+id/tvMessage"
             android:layout_width="match_parent"
@@ -329,7 +329,7 @@
             android:textColor="?android:attr/textColorSecondary"
             android:visibility="gone"
             tools:visibility="visible"
-            tools:text="接口不存在，等待创建..."/>
+            tools:text="Interface does not exist, waiting for creation..."/>
 
     </LinearLayout>
 </ScrollView>

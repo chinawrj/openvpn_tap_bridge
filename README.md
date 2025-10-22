@@ -1,175 +1,175 @@
 # OpenVPN TAP Bridge Monitor
 
-一个轻量级的 Android 应用，用于实时监控 VPN/TAP/TUN 网络接口的状态和流量速率。
+A lightweight Android application for real-time monitoring of VPN/TAP/TUN network interface status and traffic rate.
 
-## 功能特性
+## Features
 
-### 核心功能
-- ✅ **实时监控**：秒级刷新网络接口状态
-- ✅ **接口状态检测**：显示接口是否 UP/DOWN、是否有载波
-- ✅ **桥接检测**：检测接口是否加入网桥（如 br0）
-- ✅ **路由检测**：检测接口是否承载默认路由
-- ✅ **速率统计**：实时显示上行/下行速率（bps），自动单位换算（Kbps/Mbps/Gbps）
-- ✅ **接口切换**：支持自定义监控的接口名称（tap0/tun0/wlan0 等）
-- ✅ **常驻服务**：前台服务保持应用常驻，状态栏显示简要信息
+### Core Functions
+- ✅ **Real-time Monitoring**: Second-level refresh of network interface status
+- ✅ **Interface Status Detection**: Display whether interface is UP/DOWN and has carrier
+- ✅ **Bridge Detection**: Detect if interface is added to bridge (e.g. br0)
+- ✅ **Route Detection**: Detect if interface carries default route
+- ✅ **Rate Statistics**: Real-time display of uplink/downlink rate (bps) with automatic unit conversion (Kbps/Mbps/Gbps)
+- ✅ **Interface Switching**: Support custom monitoring of interface names (tap0/tun0/wlan0, etc.)
+- ✅ **Foreground Service**: Keep app resident with brief status bar information
 
-### 技术特点
-- 🔒 **Root 权限**：需要 root 权限读取 `/sys` 和 `/proc` 受保护的文件
-- 📊 **纯文件系统**：通过 `/sys` 和 `/proc` 读取状态，性能优异
-- 🔄 **自动恢复**：接口消失/重建时自动恢复监控
-- 🔧 **自动降级**：优先直接读取，失败时自动使用 root 权限
-- 🧪 **单元测试**：核心逻辑覆盖单元测试
+### Technical Features
+- 🔒 **Root Permission**: Requires root permission to read protected files in `/sys` and `/proc`
+- 📊 **Pure Filesystem**: Read status through `/sys` and `/proc` for excellent performance
+- 🔄 **Auto Recovery**: Automatically resume monitoring when interface disappears/rebuilds
+- 🔧 **Auto Fallback**: Prioritize direct reading, automatically use root permission on failure
+- 🧪 **Unit Tests**: Core logic covered by unit tests
 
-## 技术架构
+## Technical Architecture
 
-### 数据源
-- `/sys/class/net/<ifname>/operstate` - 接口运行状态
-- `/sys/class/net/<ifname>/carrier` - 载波状态
-- `/sys/class/net/<ifname>/statistics/rx_bytes` - 接收字节数
-- `/sys/class/net/<ifname>/statistics/tx_bytes` - 发送字节数
-- `/sys/class/net/<ifname>/brport/bridge` - 桥接状态
-- `/proc/net/route` - 路由表
+### Data Sources
+- `/sys/class/net/<ifname>/operstate` - Interface operational state
+- `/sys/class/net/<ifname>/carrier` - Carrier status
+- `/sys/class/net/<ifname>/statistics/rx_bytes` - Received bytes
+- `/sys/class/net/<ifname>/statistics/tx_bytes` - Transmitted bytes
+- `/sys/class/net/<ifname>/brport/bridge` - Bridge status
+- `/proc/net/route` - Routing table
 
-### 核心模块
+### Core Modules
 ```
 core/
-  ├── FileReaders.kt      # 安全文件读取
-  ├── RouteParser.kt      # 路由表解析
-  ├── BridgeDetector.kt   # 桥接检测
-  ├── RateMeter.kt        # 速率计算
-  ├── IfaceReader.kt      # 接口状态读取
-  └── IfaceMonitor.kt     # 监控器（协程轮询）
+  ├── FileReaders.kt      # Safe file reading
+  ├── RouteParser.kt      # Route table parsing
+  ├── BridgeDetector.kt   # Bridge detection
+  ├── RateMeter.kt        # Rate calculation
+  ├── IfaceReader.kt      # Interface status reading
+  └── IfaceMonitor.kt     # Monitor (coroutine polling)
 ```
 
-## 构建项目
+## Build Project
 
-### 使用 Android Studio JDK（推荐）
+### Using Android Studio JDK (Recommended)
 ```bash
 ./build-with-as.sh assembleDebug
 ```
 
-### 运行测试
+### Run Tests
 ```bash
 ./build-with-as.sh test
 ```
 
-### 手动构建（需要 JDK 11+）
+### Manual Build (Requires JDK 11+)
 ```bash
 export JAVA_HOME="/path/to/jdk11"
 ./gradlew assembleDebug
 ```
 
-## 安装使用
+## Installation and Usage
 
-### 前提条件
-- ⚠️ **需要 Root 权限**：应用需要 root 权限才能读取 `/sys/class/net` 下的受保护文件
+### Prerequisites
+- ⚠️ **Root Permission Required**: App needs root permission to read protected files under `/sys/class/net`
 - Android 8.0+ (API 26+)
-- 已 root 的 Android 设备
+- Rooted Android device
 
-### 安装步骤
+### Installation Steps
 
-1. **编译 APK**：
+1. **Compile APK**:
    ```bash
    ./build-with-as.sh assembleDebug
    ```
-   APK 位置：`app/build/outputs/apk/debug/app-debug.apk`
+   APK location: `app/build/outputs/apk/debug/app-debug.apk`
 
-2. **安装到设备**：
+2. **Install to device**:
    ```bash
    adb install app/build/outputs/apk/debug/app-debug.apk
    ```
 
-3. **授予 Root 权限**：
-   - 首次打开应用时，会请求 root 权限
-   - 请在 SuperSU/Magisk 等 root 管理应用中允许
+3. **Grant Root permission**:
+   - When opening the app for the first time, it will request root permission
+   - Please allow in root management apps like SuperSU/Magisk
 
-4. **配置接口**：
-   - 打开应用
-   - 点击右上角"设置"图标
-   - 输入要监控的接口名称（如 `tap0`）
-   - 保存设置
+4. **Configure interface**:
+   - Open the app
+   - Click the "Settings" icon in the upper right corner
+   - Enter the interface name to monitor (e.g. `tap0`)
+   - Save settings
 
-5. **启动监控**：
-   - 返回主界面
-   - 点击菜单 → "启动服务"
-   - 应用将在后台持续监控，状态栏显示简要信息
+5. **Start monitoring**:
+   - Return to main interface
+   - Click menu → "Start Service"
+   - App will continuously monitor in background with brief status bar information
 
-## 使用场景
+## Use Cases
 
-### 典型场景
-1. **OpenVPN TAP 监控**：监控 TAP 接口是否正常工作
-2. **网桥调试**：检查接口是否成功加入网桥
-3. **路由切换**：观察默认路由的切换情况
-4. **流量统计**：实时查看网络流量速率
+### Typical Scenarios
+1. **OpenVPN TAP Monitoring**: Monitor if TAP interface is working properly
+2. **Bridge Debugging**: Check if interface successfully joined bridge
+3. **Route Switching**: Observe default route switching
+4. **Traffic Statistics**: Real-time network traffic rate viewing
 
-### 验收测试
-- [x] 接口出现/消失：拔/插 VPN，UI 在 ≤2s 内切换状态
-- [x] 桥接检测：`brctl addif/delif` 时正确显示桥接状态
-- [x] 默认路由切换：路由变化时 ≤2s 内更新
-- [x] 速率计算：持续流量下速率单调响应，抖动 <10%
+### Acceptance Testing
+- [x] Interface appear/disappear: UI switches status within ≤2s when plugging/unplugging VPN
+- [x] Bridge detection: Correctly shows bridge status during `brctl addif/delif`
+- [x] Default route switching: Updates within ≤2s when route changes
+- [x] Rate calculation: Rate responds monotonically under continuous traffic, fluctuation <10%
 
-## 权限说明
+## Permission Description
 
 ```xml
-<!-- 前台服务权限（Android 9+） -->
+<!-- Foreground service permission (Android 9+) -->
 <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 
-<!-- 通知权限（Android 13+，可选） -->
+<!-- Notification permission (Android 13+, optional) -->
 <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 ```
 
-⚠️ **Root 权限说明**：
-- 应用需要 root 权限才能读取 `/sys/class/net` 和 `/proc/net` 下的受保护文件
-- 在某些 Android 设备上，SELinux 策略会阻止普通应用访问这些系统文件
-- 应用会优先尝试直接读取，失败时自动使用 `su -c` 命令
-- 应用**仅读取**系统文件，不会修改任何配置
+⚠️ **Root Permission Explanation**:
+- App requires root permission to read protected files under `/sys/class/net` and `/proc/net`
+- On some Android devices, SELinux policies prevent normal apps from accessing these system files
+- App will first try to read directly, automatically using `su -c` command on failure
+- App **only reads** system files, does not modify any configuration
 
-## 项目配置
+## Project Configuration
 
 - **minSdk**: 26 (Android 8.0)
 - **targetSdk**: 34 (Android 14)
-- **语言**: Kotlin
-- **协程**: kotlinx-coroutines
-- **架构**: MVVM (LiveData)
+- **Language**: Kotlin
+- **Coroutines**: kotlinx-coroutines
+- **Architecture**: MVVM (LiveData)
 
-## 测试
+## Testing
 
-### 单元测试
+### Unit Tests
 ```bash
 ./build-with-as.sh test
 ```
 
-测试覆盖：
-- `RateMeterTest` - 速率计算逻辑
-- `FormatUtilsTest` - 格式化工具
+Test Coverage:
+- `RateMeterTest` - Rate calculation logic
+- `FormatUtilsTest` - Formatting utilities
 
-### 手工测试清单
-1. ✅ 接口存在性检测
-2. ✅ UP/DOWN 状态切换
-3. ✅ 载波状态检测
-4. ✅ 桥接状态检测（需要 root 权限执行 brctl）
-5. ✅ 默认路由检测
-6. ✅ 速率计算准确性
-7. ✅ 接口重建后恢复监控
+### Manual Test Checklist
+1. ✅ Interface existence detection
+2. ✅ UP/DOWN status switching
+3. ✅ Carrier status detection
+4. ✅ Bridge status detection (requires root permission to execute brctl)
+5. ✅ Default route detection
+6. ✅ Rate calculation accuracy
+7. ✅ Resume monitoring after interface rebuild
 
-## 开发路线图
+## Roadmap
 
-- [x] 基础功能实现
-- [x] 前台服务
-- [x] 单元测试
-- [ ] 多接口同时监控
-- [ ] 历史数据记录
-- [ ] 数据导出功能
-- [ ] Widget 支持
+- [x] Basic functionality implementation
+- [x] Foreground service
+- [x] Unit tests
+- [ ] Multiple interface monitoring simultaneously
+- [ ] Historical data recording
+- [ ] Data export functionality
+- [ ] Widget support
 
-## 许可证
+## License
 
 MIT License
 
-## 贡献
+## Contributing
 
-欢迎提交 Issue 和 Pull Request！
+Issues and Pull Requests are welcome!
 
 ---
 
-**注意**：本应用仅用于监控，不会修改任何系统配置或网络设置。
+**Note**: This app is for monitoring only and does not modify any system configuration or network settings.

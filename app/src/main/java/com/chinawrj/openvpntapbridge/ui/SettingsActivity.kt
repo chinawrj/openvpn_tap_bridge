@@ -9,8 +9,8 @@ import com.chinawrj.openvpntapbridge.R
 import com.chinawrj.openvpntapbridge.data.AppPreferences
 
 /**
- * 设置界面
- * 允许用户配置监控的网络接口名称
+ * Settings activity
+ * Allows user to configure monitored network interface name
  */
 class SettingsActivity : AppCompatActivity() {
     private lateinit var prefs: AppPreferences
@@ -22,20 +22,20 @@ class SettingsActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_settings)
 
-        // 启用返回按钮
+        // Enable back button
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         prefs = AppPreferences.getInstance(this)
 
-        // 绑定视图
+        // Bind views
         etInterfaceName = findViewById(R.id.etInterfaceName)
         btnSave = findViewById(R.id.btnSave)
         btnCancel = findViewById(R.id.btnCancel)
 
-        // 加载当前配置
+        // Load current configuration
         etInterfaceName.setText(prefs.interfaceName)
 
-        // 设置监听器
+        // Set listeners
         btnSave.setOnClickListener {
             saveSettings()
         }
@@ -54,11 +54,11 @@ class SettingsActivity : AppCompatActivity() {
         val interfaceName = etInterfaceName.text.toString().trim()
 
         if (interfaceName.isEmpty()) {
-            Toast.makeText(this, "接口名称不能为空", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Interface name cannot be empty", Toast.LENGTH_SHORT).show()
             return
         }
 
-        // 保存配置
+        // Save configuration
         prefs.interfaceName = interfaceName
 
         Toast.makeText(this, getString(R.string.saved_successfully), Toast.LENGTH_SHORT).show()

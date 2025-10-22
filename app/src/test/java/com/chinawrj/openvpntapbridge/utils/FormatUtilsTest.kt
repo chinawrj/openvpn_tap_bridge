@@ -4,7 +4,7 @@ import org.junit.Assert.*
 import org.junit.Test
 
 /**
- * FormatUtils 单元测试
+ * FormatUtils unit tests
  */
 class FormatUtilsTest {
 

@@ -3,17 +3,17 @@ package com.chinawrj.openvpntapbridge.core
 import android.util.Log
 
 /**
- * 路由表解析器
- * 解析 /proc/net/route 检测默认路由
+ * Route table parser
+ * Parse /proc/net/route to detect default route
  */
 object RouteParser {
     private const val TAG = "RouteParser"
     private const val ROUTE_FILE = "/proc/net/route"
 
     /**
-     * 检测指定接口是否承载默认路由
-     * @param iface 接口名（如 tap0）
-     * @return true 如果该接口承载默认路由
+     * Detect if specified interface carries default route
+     * @param iface Interface name (e.g. tap0)
+     * @return true if this interface carries default route
      */
     fun parseIsDefaultVia(iface: String): Boolean {
         val content = FileReaders.readTextSafe(ROUTE_FILE)
@@ -23,8 +23,8 @@ object RouteParser {
         }
 
         val lines = content.split('\n')
-        // 跳过表头
-        // 格式: Iface Destination Gateway Flags RefCnt Use Metric Mask MTU Window IRTT
+        // Skip header
+        // Format: Iface Destination Gateway Flags RefCnt Use Metric Mask MTU Window IRTT
         for (i in 1 until lines.size) {
             val cols = lines[i].split('\t', ' ').filter { it.isNotEmpty() }
             if (cols.size < 4) continue
@@ -33,12 +33,12 @@ object RouteParser {
             val destination = cols[1]
             val flagsHex = cols[3]
 
-            // 解析标志位
+            // Parse flags
             val flags = runCatching { flagsHex.toInt(16) }.getOrDefault(0)
 
-            // 00000000 表示默认路由 (0.0.0.0)
+            // 00000000 indicates default route (0.0.0.0)
             val isDefault = (destination == "00000000")
-            // 检查 U (Up) 和 G (Gateway) 标志
+            // Check U (Up) and G (Gateway) flags
             // U = 0x0001, G = 0x0002
             val hasUG = (flags and 0x3) == 0x3
 

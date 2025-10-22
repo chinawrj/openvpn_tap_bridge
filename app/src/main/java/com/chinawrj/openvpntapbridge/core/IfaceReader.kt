@@ -3,38 +3,38 @@ package com.chinawrj.openvpntapbridge.core
 import android.util.Log
 
 /**
- * 接口状态快照
+ * Interface status snapshot
  */
 data class IfaceSnapshot(
-    val exists: Boolean,          // 接口是否存在
-    val up: Boolean,              // 接口是否UP
-    val carrier: Boolean,         // 是否有载波
-    val rxBytes: Long,            // 累积接收字节数
-    val txBytes: Long,            // 累积发送字节数
-    val rxPackets: Long,          // 累积接收包数
-    val txPackets: Long,          // 累积发送包数
-    val inBridge: Boolean,        // 是否在网桥中
-    val bridgeName: String?,      // 所属网桥名称
-    val isDefaultRoute: Boolean,  // 是否承载默认路由
-    val bridgePorts: List<BridgePort>  // 网桥的所有端口（仅当接口是网桥时）
+    val exists: Boolean,          // Whether interface exists
+    val up: Boolean,              // Whether interface is UP
+    val carrier: Boolean,         // Whether has carrier
+    val rxBytes: Long,            // Accumulated received bytes
+    val txBytes: Long,            // Accumulated transmitted bytes
+    val rxPackets: Long,          // Accumulated received packets
+    val txPackets: Long,          // Accumulated transmitted packets
+    val inBridge: Boolean,        // Whether in bridge
+    val bridgeName: String?,      // Bridge name it belongs to
+    val isDefaultRoute: Boolean,  // Whether carries default route
+    val bridgePorts: List<BridgePort>  // All ports of the bridge (only when interface is a bridge)
 )
 
 /**
- * 接口状态读取器
- * 读取 /sys/class/net 下的接口信息
+ * Interface status reader
+ * Read interface information under /sys/class/net
  */
 object IfaceReader {
     private const val TAG = "IfaceReader"
 
     /**
-     * 读取指定接口的完整状态快照
-     * @param iface 接口名称（如 tap0）
-     * @return 接口状态快照
+     * Read complete status snapshot of specified interface
+     * @param iface Interface name (e.g. tap0)
+     * @return Interface status snapshot
      */
     fun read(iface: String): IfaceSnapshot {
         val basePath = "/sys/class/net/$iface"
 
-        // 检查接口是否存在
+        // Check if interface exists
         if (!FileReaders.exists(basePath)) {
             Log.d(TAG, "Interface $iface does not exist")
             return IfaceSnapshot(
@@ -52,31 +52,28 @@ object IfaceReader {
             )
         }
 
-        // 读取 operstate (up/down/unknown)
+        // Read operstate (up/down/unknown)
         val operState = FileReaders.readTextSafe("$basePath/operstate")
         val up = operState == "up"
 
-        // 读取 carrier (1/0)
+        // Read carrier (1/0)
         val carrierText = FileReaders.readTextSafe("$basePath/carrier")
         val carrier = carrierText == "1"
 
-        // 当 operstate 为 unknown 时，使用 carrier 状态
-        val isUp = if (operState == "unknown") carrier else up
-
-        // 读取统计数据
+        // Read statistics
         val rxBytes = FileReaders.readLongSafe("$basePath/statistics/rx_bytes")
         val txBytes = FileReaders.readLongSafe("$basePath/statistics/tx_bytes")
         val rxPackets = FileReaders.readLongSafe("$basePath/statistics/rx_packets")
         val txPackets = FileReaders.readLongSafe("$basePath/statistics/tx_packets")
 
-        // 检测桥接状态
+        // Detect bridge status
         val bridgeName = BridgeDetector.getBridgeName(iface)
         val inBridge = bridgeName != null
 
-        // 检测默认路由
+        // Detect default route
         val isDefaultRoute = RouteParser.parseIsDefaultVia(iface)
 
-        // 如果接口在网桥中，读取网桥的所有端口
+        // If interface is in a bridge, read all ports of the bridge
         val bridgePorts = if (bridgeName != null) {
             BridgeDetector.getBridgePorts(bridgeName)
         } else {
@@ -84,14 +81,14 @@ object IfaceReader {
         }
 
         Log.d(
-            TAG, "Interface $iface: exists=true, operState=$operState, up=$isUp, carrier=$carrier, " +
+            TAG, "Interface $iface: exists=true, operState=$operState, up=$up, carrier=$carrier, " +
                     "rx=${rxBytes}B/${rxPackets}pkt, tx=${txBytes}B/${txPackets}pkt, " +
                     "bridge=$bridgeName, default=$isDefaultRoute, ports=${bridgePorts.size}"
         )
 
         return IfaceSnapshot(
             exists = true,
-            up = isUp,
+            up = up,
             carrier = carrier,
             rxBytes = rxBytes,
             txBytes = txBytes,

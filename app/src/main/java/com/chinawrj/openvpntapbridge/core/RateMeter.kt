@@ -1,8 +1,8 @@
 package com.chinawrj.openvpntapbridge.core
 
 /**
- * 速率计算器
- * 根据两次采样的时间和累积字节数计算瞬时速率（bps）
+ * Rate calculator
+ * Calculate instantaneous rate (bps) based on two samplings of time and cumulative bytes
  */
 class RateMeter {
     private var lastTimeMs = 0L
@@ -10,14 +10,14 @@ class RateMeter {
     private var lastTxBytes = 0L
 
     /**
-     * 采样并计算速率
-     * @param nowMs 当前时间戳（毫秒）
-     * @param rxBytes 累积接收字节数
-     * @param txBytes 累积发送字节数
-     * @return Pair(rx_bps, tx_bps)，首次采样返回null
+     * Sample and calculate rate
+     * @param nowMs Current timestamp (milliseconds)
+     * @param rxBytes Cumulative received bytes
+     * @param txBytes Cumulative transmitted bytes
+     * @return Pair(rx_bps, tx_bps), returns null for first sampling
      */
     fun sample(nowMs: Long, rxBytes: Long, txBytes: Long): Pair<Long, Long>? {
-        // 首次采样，只记录基准值
+        // First sampling, only record baseline values
         if (lastTimeMs == 0L) {
             lastTimeMs = nowMs
             lastRxBytes = rxBytes
@@ -27,19 +27,19 @@ class RateMeter {
 
         val deltaTimeMs = nowMs - lastTimeMs
         if (deltaTimeMs <= 0) {
-            // 时间无效，不更新
+            // Invalid time, do not update
             return null
         }
 
-        // 计算字节差值（确保非负）
+        // Calculate byte difference (ensure non-negative)
         val deltaRxBytes = (rxBytes - lastRxBytes).coerceAtLeast(0)
         val deltaTxBytes = (txBytes - lastTxBytes).coerceAtLeast(0)
 
-        // 计算 bps = (字节差 * 8 * 1000) / 时间差(ms)
+        // Calculate bps = (byte_diff * 8 * 1000) / time_diff(ms)
         val rxBps = (deltaRxBytes * 8L * 1000L) / deltaTimeMs
         val txBps = (deltaTxBytes * 8L * 1000L) / deltaTimeMs
 
-        // 更新基准值
+        // Update baseline values
         lastTimeMs = nowMs
         lastRxBytes = rxBytes
         lastTxBytes = txBytes
@@ -48,8 +48,8 @@ class RateMeter {
     }
 
     /**
-     * 重置计量器状态
-     * 用于接口重建或切换时清零
+     * Reset meter state
+     * Used to reset when interface is rebuilt or switched
      */
     fun reset() {
         lastTimeMs = 0L

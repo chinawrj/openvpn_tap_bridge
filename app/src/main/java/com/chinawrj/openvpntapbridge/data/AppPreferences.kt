@@ -4,8 +4,8 @@ import android.content.Context
 import android.content.SharedPreferences
 
 /**
- * 应用配置管理器
- * 使用SharedPreferences存储应用配置
+ * Application configuration manager
+ * Use SharedPreferences to store application configuration
  */
 class AppPreferences(context: Context) {
     private val prefs: SharedPreferences = context.getSharedPreferences(
@@ -28,7 +28,7 @@ class AppPreferences(context: Context) {
     }
 
     /**
-     * 获取当前监控的接口名称
+     * Get current monitored interface name
      */
     var interfaceName: String
         get() = prefs.getString(KEY_INTERFACE_NAME, DEFAULT_INTERFACE) ?: DEFAULT_INTERFACE

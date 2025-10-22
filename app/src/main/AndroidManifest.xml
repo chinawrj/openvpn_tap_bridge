@@ -2,9 +2,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- 前台服务权限 -->
+    <!-- Foreground service permission -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <!-- Android 13+ 通知权限 -->
+    <!-- Android 13+ notification permission -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" tools:targetApi="33" />
 
     <application
@@ -17,7 +17,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.OpenVPNTAPBridge">
         
-        <!-- 主界面 -->
+        <!-- Main activity -->
         <activity
             android:name=".ui.MainActivity"
             android:exported="true">
@@ -27,14 +27,14 @@
             </intent-filter>
         </activity>
         
-        <!-- 设置界面 -->
+        <!-- Settings activity -->
         <activity
             android:name=".ui.SettingsActivity"
             android:exported="false"
             android:label="@string/settings_title"
             android:parentActivityName=".ui.MainActivity" />
         
-        <!-- 前台服务 -->
+        <!-- Foreground service -->
         <service
             android:name=".service.ForegroundSamplerService"
             android:exported="false"

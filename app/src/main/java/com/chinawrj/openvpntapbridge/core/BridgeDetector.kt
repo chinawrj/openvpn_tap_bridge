@@ -3,7 +3,7 @@ package com.chinawrj.openvpntapbridge.core
 import android.util.Log
 
 /**
- * 网桥端口信息
+ * Bridge port information
  */
 data class BridgePort(
     val name: String,
@@ -11,21 +11,21 @@ data class BridgePort(
 )
 
 /**
- * 桥接检测器
- * 检测网络接口是否被加入到网桥
+ * Bridge detector
+ * Detect if network interface is added to a bridge
  */
 object BridgeDetector {
     private const val TAG = "BridgeDetector"
 
     /**
-     * 检测接口是否被enslaved到指定网桥
-     * @param iface 接口名（如 tap0）
-     * @param bridge 网桥名（默认 br0）
-     * @return true 如果接口在指定网桥中
+     * Detect if interface is enslaved to specified bridge
+     * @param iface Interface name (e.g. tap0)
+     * @param bridge Bridge name (default br0)
+     * @return true if interface is in specified bridge
      */
     fun isEnslavedTo(iface: String, bridge: String = "br0"): Boolean {
-        // 路径: /sys/class/net/<iface>/brport/bridge
-        // 这是一个符号链接，指向所属网桥的目录
+        // Path: /sys/class/net/<iface>/brport/bridge
+        // This is a symbolic link pointing to the bridge directory it belongs to
         val brportPath = "/sys/class/net/$iface/brport/bridge"
 
         if (!FileReaders.exists(brportPath)) {
@@ -33,7 +33,7 @@ object BridgeDetector {
             return false
         }
 
-        val target = FileReaders.readSymbolicLink(brportPath)
+        val target = FileReaders.readlink(brportPath) ?: return false
         val result = target.endsWith("/$bridge")
 
         Log.d(TAG, "Interface $iface bridge check: target=$target, in_$bridge=$result")
@@ -41,9 +41,9 @@ object BridgeDetector {
     }
 
     /**
-     * 获取接口所属的网桥名称
-     * @param iface 接口名
-     * @return 网桥名称，如果不在任何网桥中则返回null
+     * Get the bridge name that the interface belongs to
+     * @param iface Interface name
+     * @return Bridge name, or null if not in any bridge
      */
     fun getBridgeName(iface: String): String? {
         val brportPath = "/sys/class/net/$iface/brport/bridge"
@@ -52,10 +52,10 @@ object BridgeDetector {
             return null
         }
 
-        val target = FileReaders.readSymbolicLink(brportPath)
-        // 从完整路径中提取网桥名称
-        // 如 "/sys/devices/virtual/net/br0" -> "br0"
-        // 或 "../../../br0" -> "br0"
+        val target = FileReaders.readlink(brportPath) ?: return null
+        // Extract bridge name from full path
+        // e.g. "/sys/devices/virtual/net/br0" -> "br0"
+        // or "../../../br0" -> "br0"
         val bridgeName = target.substringAfterLast('/')
         
         Log.d(TAG, "Interface $iface bridge: target=$target, name=$bridgeName")
@@ -63,9 +63,9 @@ object BridgeDetector {
     }
 
     /**
-     * 获取网桥的所有端口
-     * @param bridge 网桥名称（如 br0）
-     * @return 端口列表，如果不是网桥或读取失败则返回空列表
+     * Get all ports of the bridge
+     * @param bridge Bridge name (e.g. br0)
+     * @return Port list, or empty list if not a bridge or read failed
      */
     fun getBridgePorts(bridge: String): List<BridgePort> {
         val brIfPath = "/sys/class/net/$bridge/brif"
@@ -75,21 +75,21 @@ object BridgeDetector {
             return emptyList()
         }
 
-        // 读取 brif 目录下的所有端口
-        val ports = FileReaders.listDirectory(brIfPath)
+        // Read all ports under brif directory
+        val ports = FileReaders.listDir(brIfPath)
         
         if (ports.isEmpty()) {
             Log.d(TAG, "Bridge $bridge has no ports")
             return emptyList()
         }
 
-        // 检查每个端口的状态
+        // Check status of each port
         val result = ports.mapNotNull { portName ->
             val operState = FileReaders.readTextSafe("/sys/class/net/$portName/operstate")
             val carrierText = FileReaders.readTextSafe("/sys/class/net/$portName/carrier")
             val carrier = carrierText == "1"
             
-            // 当 operstate 为 unknown 时，使用 carrier 状态
+            // When operstate is unknown, use carrier status
             val isUp = if (operState == "unknown") carrier else (operState == "up")
             
             BridgePort(name = portName, up = isUp)

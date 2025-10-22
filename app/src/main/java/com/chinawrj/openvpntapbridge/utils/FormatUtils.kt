@@ -3,13 +3,13 @@ package com.chinawrj.openvpntapbridge.utils
 import kotlin.math.abs
 
 /**
- * 格式化工具类
+ * Formatting utility class
  */
 object FormatUtils {
     /**
-     * 格式化速率（固定使用 Mbps，保留1位小数）
-     * @param bps 比特每秒
-     * @return 格式化字符串，如 "1.2 Mbps"
+     * Format rate (fixed use Mbps, keep 1 decimal place)
+     * @param bps bits per second
+     * @return formatted string, e.g. "1.2 Mbps"
      */
     fun formatBps(bps: Long): String {
         val mbps = bps / 1_000_000.0
@@ -17,9 +17,9 @@ object FormatUtils {
     }
 
     /**
-     * 格式化字节数为人类可读格式
-     * @param bytes 字节数
-     * @return 格式化字符串，如 "1.5 MB"
+     * Format bytes to human-readable format
+     * @param bytes byte count
+     * @return formatted string, e.g. "1.5 MB"
      */
     fun formatBytes(bytes: Long): String {
         val absBytes = abs(bytes).toDouble()
@@ -32,9 +32,9 @@ object FormatUtils {
     }
 
     /**
-     * 格式化包数量
-     * @param packets 包数量
-     * @return 格式化后的字符串（如 "1.2M"）
+     * Format packet count
+     * @param packets packet count
+     * @return formatted string (e.g. "1.2M")
      */
     fun formatPackets(packets: Long): String {
         val absPackets = abs(packets).toDouble()

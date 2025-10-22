@@ -18,7 +18,7 @@ import com.chinawrj.openvpntapbridge.ui.MainActivity
 import com.chinawrj.openvpntapbridge.utils.FormatUtils
 
 /**
- * 前台服务，保持应用常驻，持续监控网络接口
+ * Foreground service, keeps app resident, continuously monitors network interface
  */
 class ForegroundSamplerService : LifecycleService() {
     private lateinit var prefs: AppPreferences
@@ -52,10 +52,10 @@ class ForegroundSamplerService : LifecycleService() {
         prefs = AppPreferences.getInstance(this)
         createNotificationChannel()
 
-        // 启动前台通知（Android 9+必须在5秒内显示）
-        startForeground(NOTIFICATION_ID, buildNotification("正在启动..."))
+        // Start foreground notification (Android 9+ requires display within 5 seconds)
+        startForeground(NOTIFICATION_ID, buildNotification("Starting..."))
 
-        // 启动监控器
+        // Start monitor
         startMonitoring()
     }
 
@@ -70,7 +70,7 @@ class ForegroundSamplerService : LifecycleService() {
         Log.d(TAG, "Service onDestroy")
         monitor?.stop()
         monitor = null
-        // 关闭root shell会话
+        // Close root shell session
         FileReaders.closeRootShell()
     }
 
@@ -94,8 +94,8 @@ class ForegroundSamplerService : LifecycleService() {
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val name = "网络监控"
-            val descriptionText = "显示网络接口状态和速率"
+            val name = "Network Monitor"
+            val descriptionText = "Display network interface status and rate"
             val importance = NotificationManager.IMPORTANCE_LOW
             val channel = NotificationChannel(CHANNEL_ID, name, importance).apply {
                 description = descriptionText
@@ -114,7 +114,7 @@ class ForegroundSamplerService : LifecycleService() {
         )
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("VPN TAP Bridge 监控")
+            .setContentTitle("VPN TAP Bridge Monitor")
             .setContentText(contentText)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentIntent(pendingIntent)
@@ -124,7 +124,7 @@ class ForegroundSamplerService : LifecycleService() {
 
     private fun updateNotification(model: UiModel) {
         val text = if (!model.exists) {
-            "接口 ${prefs.interfaceName} 不存在"
+            "Interface ${prefs.interfaceName} does not exist"
         } else {
             val status = when {
                 model.up && model.carrier -> "● UP"
