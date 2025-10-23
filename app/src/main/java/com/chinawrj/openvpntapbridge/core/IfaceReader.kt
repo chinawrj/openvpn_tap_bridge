@@ -54,11 +54,13 @@ object IfaceReader {
 
         // Read operstate (up/down/unknown)
         val operState = FileReaders.readTextSafe("$basePath/operstate")
-        val up = operState == "up"
 
         // Read carrier (1/0)
         val carrierText = FileReaders.readTextSafe("$basePath/carrier")
         val carrier = carrierText == "1"
+
+        // When operstate is unknown, use carrier status
+        val up = if (operState == "unknown") carrier else (operState == "up")
 
         // Read statistics
         val rxBytes = FileReaders.readLongSafe("$basePath/statistics/rx_bytes")
