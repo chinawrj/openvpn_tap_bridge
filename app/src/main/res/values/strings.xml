@@ -36,6 +36,15 @@
     <string name="settings_title">Settings</string>
     <string name="interface_name_title">Interface Name</string>
     <string name="interface_name_hint">e.g.: tap0, tun0</string>
+    <string name="ap_interfaces_title">AP Interfaces (Wi-Fi Hotspot)</string>
+    <string name="ap_interfaces_hint">e.g.: ap0 wlan1 softap0 wlan0</string>
+    <string name="ncm_interface_title">NCM Interface (USB Tethering)</string>
+    <string name="ncm_interface_hint">e.g.: ncm0, usb0, rndis0</string>
+    <string name="ovpn_config_title">OpenVPN Config File</string>
+    <string name="ovpn_not_configured">Not configured</string>
+    <string name="ovpn_select_file">Select OVPN File</string>
+    <string name="ovpn_file_copied">Config file copied successfully</string>
+    <string name="ovpn_file_error">Failed to copy config file</string>
     <string name="save">Save</string>
     <string name="cancel">Cancel</string>
     <string name="saved_successfully">Settings Saved</string>

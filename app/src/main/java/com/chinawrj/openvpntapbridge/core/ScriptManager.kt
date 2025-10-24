@@ -15,9 +15,9 @@ object ScriptManager {
     // Script file name in assets
     private const val SCRIPT_ASSET = "vpn-hotspot-bridge.sh"
     
-    // Installation locations
-    const val INSTALL_PATH_DATA = "/data/local/tmp/vpn-hotspot-bridge.sh"
+    // Installation locations (prefer service.d for auto-start on boot)
     const val INSTALL_PATH_SERVICE = "/data/adb/service.d/vpn-hotspot-bridge.sh"
+    const val INSTALL_PATH_DATA = "/data/local/tmp/vpn-hotspot-bridge.sh"
     
     // Log file location
     const val LOG_PATH = "/data/local/tmp/vpn-bridge.log"
@@ -43,11 +43,11 @@ object ScriptManager {
     
     /**
      * Check if script is installed
-     * @param preferredPath Preferred installation path (default: /data/local/tmp)
+     * @param preferredPath Preferred installation path (default: /data/adb/service.d)
      * @return Script status
      */
-    fun checkStatus(preferredPath: String = INSTALL_PATH_DATA): ScriptStatus {
-        val paths = listOf(preferredPath, INSTALL_PATH_DATA, INSTALL_PATH_SERVICE)
+    fun checkStatus(preferredPath: String = INSTALL_PATH_SERVICE): ScriptStatus {
+        val paths = listOf(preferredPath, INSTALL_PATH_SERVICE, INSTALL_PATH_DATA)
         
         for (path in paths) {
             if (FileReaders.exists(path)) {
@@ -72,10 +72,19 @@ object ScriptManager {
     /**
      * Install script from assets to target path
      * @param context Application context
-     * @param targetPath Target installation path
+     * @param targetPath Target installation path (defaults to /data/adb/service.d for auto-start)
+     * @param apInterfaces AP interface fallback list (space-separated)
+     * @param ncmInterface NCM/USB tethering interface name
+     * @param ovpnConfigPath OpenVPN config file path
      * @return Installation result
      */
-    fun install(context: Context, targetPath: String = INSTALL_PATH_DATA): InstallResult {
+    fun install(
+        context: Context, 
+        targetPath: String = INSTALL_PATH_SERVICE,
+        apInterfaces: String = "ap0 wlan1 softap0 swlan0 wlan0",
+        ncmInterface: String = "ncm0",
+        ovpnConfigPath: String = ""
+    ): InstallResult {
         try {
             // Check if already installed
             if (FileReaders.exists(targetPath)) {
@@ -86,8 +95,25 @@ object ScriptManager {
                 )
             }
             
+            // Determine OVPN config path to use
+            val finalOvpnPath = if (ovpnConfigPath.isNotEmpty()) {
+                ovpnConfigPath
+            } else {
+                "/data/adb/service.d/pixel8a.ovpn"  // Default fallback
+            }
+            
             // Read script from assets
-            val scriptContent = context.assets.open(SCRIPT_ASSET).bufferedReader().use { it.readText() }
+            var scriptContent = context.assets.open(SCRIPT_ASSET).bufferedReader().use { it.readText() }
+            
+            // Replace placeholders with user-configured values
+            scriptContent = scriptContent
+                .replace("{{AP_INTERFACES}}", apInterfaces.trim())
+                .replace("{{NCM_INTERFACE}}", ncmInterface.trim())
+                .replace("{{OVPN_CONFIG_PATH}}", finalOvpnPath)
+            
+            Log.d(TAG, "Replaced AP_INTERFACES with: $apInterfaces")
+            Log.d(TAG, "Replaced NCM_INTERFACE with: $ncmInterface")
+            Log.d(TAG, "Replaced OVPN_CONFIG_PATH with: $finalOvpnPath")
             
             // Create temporary file in app's cache directory
             val tempFile = File(context.cacheDir, SCRIPT_ASSET)
@@ -283,41 +309,93 @@ object ScriptManager {
     }
     
     /**
-     * Stop running script
+     * Stop running script and OpenVPN
      * @return Stop result
      */
     fun stop(): InstallResult {
         try {
-            // Kill processes matching the script name
-            val killCmd = "pkill -f 'vpn-hotspot-bridge.sh'"
-            val result = FileReaders.executeInRootShell(killCmd)
+            val messages = mutableListOf<String>()
             
-            if (result != null) {
-                // Give it a moment to stop
-                Thread.sleep(500)
+            // First, try to stop OpenVPN using PID file
+            val openvpnPidPath = "/data/local/tmp/openvpn.pid"
+            val pidResult = FileReaders.executeInRootShell("cat '$openvpnPidPath' 2>/dev/null")
+            if (pidResult != null && pidResult.isNotBlank()) {
+                val pid = pidResult.trim()
+                Log.d(TAG, "Found OpenVPN PID: $pid")
                 
-                val stillRunning = checkRunning()
+                // Kill OpenVPN process
+                val killOpenvpnCmd = "kill '$pid' 2>/dev/null || true"
+                FileReaders.executeInRootShell(killOpenvpnCmd)
+                messages.add("Stopped OpenVPN (PID: $pid)")
                 
-                return InstallResult(
-                    success = !stillRunning,
-                    message = if (stillRunning) {
-                        "Failed to stop script (still running)"
-                    } else {
-                        "Script stopped successfully"
-                    }
-                )
+                // Remove PID file
+                FileReaders.executeInRootShell("rm -f '$openvpnPidPath'")
             } else {
-                return InstallResult(
-                    success = false,
-                    message = "Failed to stop script (no root access?)"
-                )
+                // Fallback: try to kill by process name
+                Log.d(TAG, "No PID file found, trying to kill OpenVPN by name")
+                FileReaders.executeInRootShell("pkill -f 'openvpn.*--config' || true")
+                messages.add("Stopped OpenVPN (by name)")
             }
+            
+            // Then kill the script process
+            val killScriptCmd = "pkill -f 'vpn-hotspot-bridge.sh' || true"
+            FileReaders.executeInRootShell(killScriptCmd)
+            messages.add("Stopped script")
+            
+            // Give processes time to terminate
+            Thread.sleep(500)
+            
+            val stillRunning = checkRunning()
+            
+            return InstallResult(
+                success = !stillRunning,
+                message = if (stillRunning) {
+                    "Warning: Script may still be running. ${messages.joinToString(", ")}"
+                } else {
+                    messages.joinToString(", ")
+                }
+            )
             
         } catch (e: Exception) {
             Log.e(TAG, "Failed to stop script", e)
             return InstallResult(
                 success = false,
                 message = "Stop error: ${e.message}"
+            )
+        }
+    }
+    
+    /**
+     * Restart the script (useful after configuration changes)
+     * @param scriptPath Path to script (if null, will search common locations)
+     * @return Restart result
+     */
+    fun restart(scriptPath: String? = null): InstallResult {
+        try {
+            Log.d(TAG, "Restarting script...")
+            
+            // Stop current instance
+            val stopResult = stop()
+            if (!stopResult.success) {
+                Log.w(TAG, "Stop during restart had issues: ${stopResult.message}")
+            }
+            
+            // Wait a bit for cleanup
+            Thread.sleep(1000)
+            
+            // Start again
+            val startResult = execute(scriptPath, background = true)
+            
+            return InstallResult(
+                success = startResult.success,
+                message = "Restarted: ${startResult.message}"
+            )
+            
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to restart script", e)
+            return InstallResult(
+                success = false,
+                message = "Restart error: ${e.message}"
             )
         }
     }

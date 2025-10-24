@@ -102,4 +102,32 @@ object IfaceReader {
             bridgePorts = bridgePorts
         )
     }
+
+    /**
+     * List all available network interfaces on the system
+     * @return List of interface names sorted alphabetically
+     */
+    fun listAllInterfaces(): List<String> {
+        val netPath = "/sys/class/net"
+        val result = mutableListOf<String>()
+        
+        try {
+            // Initialize root shell if needed
+            FileReaders.initRootShell()
+            
+            // Use ls command to list all interfaces
+            val output = FileReaders.executeInRootShell("ls $netPath")
+            Log.d(TAG, "listAllInterfaces output: $output")
+            
+            if (output != null) {
+                result.addAll(output.split("\n").filter { it.isNotBlank() })
+            }
+            
+            Log.d(TAG, "Found ${result.size} network interfaces: $result")
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to list network interfaces", e)
+        }
+        
+        return result.sorted()
+    }
 }

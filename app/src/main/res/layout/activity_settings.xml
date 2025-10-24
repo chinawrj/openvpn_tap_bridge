@@ -11,20 +11,110 @@
     android:padding="16dp">
 
     <!-- Interface Settings -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/interface_name_title"
+        android:textSize="12sp"
+        android:textColor="?android:attr/textColorSecondary"
+        android:layout_marginBottom="4dp"/>
+    
     <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
-        android:hint="@string/interface_name_title">
+        android:layout_marginBottom="16dp">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/etInterfaceName"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:inputType="text"
-            android:maxLines="1"
-            android:hint="@string/interface_name_hint"/>
+            android:maxLines="1"/>
     </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- AP Interfaces Configuration -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/ap_interfaces_title"
+        android:textSize="12sp"
+        android:textColor="?android:attr/textColorSecondary"
+        android:layout_marginBottom="4dp"/>
+    
+    <com.google.android.material.textfield.TextInputLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp">
+
+        <com.google.android.material.textfield.MaterialAutoCompleteTextView
+            android:id="@+id/etApInterfaces"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="text"
+            android:completionThreshold="0"
+            android:dropDownHeight="300dp"/>
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- NCM Interface Configuration -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/ncm_interface_title"
+        android:textSize="12sp"
+        android:textColor="?android:attr/textColorSecondary"
+        android:layout_marginBottom="4dp"/>
+    
+    <com.google.android.material.textfield.TextInputLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp">
+
+        <com.google.android.material.textfield.MaterialAutoCompleteTextView
+            android:id="@+id/etNcmInterface"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="text"
+            android:maxLines="1"
+            android:completionThreshold="0"
+            android:dropDownHeight="300dp"/>
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- OpenVPN Config File -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/ovpn_config_title"
+        android:textSize="12sp"
+        android:textColor="?android:attr/textColorSecondary"
+        android:layout_marginBottom="4dp"/>
+    
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="16dp">
+
+        <TextView
+            android:id="@+id/tvOvpnPath"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/ovpn_not_configured"
+            android:textSize="14sp"
+            android:padding="12dp"
+            android:background="?android:attr/selectableItemBackground"
+            android:gravity="center_vertical"
+            android:ellipsize="middle"
+            android:singleLine="true"/>
+
+        <Button
+            android:id="@+id/btnSelectOvpn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/ovpn_select_file"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_marginStart="8dp"/>
+    </LinearLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -35,17 +125,21 @@
 
         <Button
             android:id="@+id/btnCancel"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_weight="1"
             android:text="@string/cancel"
-            style="@style/Widget.Material3.Button.TextButton"
-            android:layout_marginEnd="8dp"/>
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_marginEnd="8dp"
+            android:minHeight="48dp"/>
 
         <Button
             android:id="@+id/btnSave"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="@string/save"/>
+            android:layout_weight="1"
+            android:text="@string/save"
+            android:minHeight="48dp"/>
     </LinearLayout>
 
     <!-- Script Management Card -->
@@ -122,70 +216,81 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:gravity="start">
+                android:gravity="center">
 
                 <Button
                     android:id="@+id/btnInstallScript"
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:text="@string/script_install"
-                    android:layout_marginEnd="8dp"/>
+                    android:layout_marginEnd="8dp"
+                    android:minHeight="48dp"/>
 
                 <Button
                     android:id="@+id/btnUninstallScript"
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:text="@string/script_uninstall"
-                    style="@style/Widget.Material3.Button.OutlinedButton"
-                    android:visibility="gone"/>
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:visibility="gone"
+                    android:minHeight="48dp"/>
             </LinearLayout>
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:gravity="start"
+                android:gravity="center"
                 android:layout_marginTop="8dp">
 
                 <Button
                     android:id="@+id/btnRunScript"
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:text="@string/script_run"
-                    style="@style/Widget.Material3.Button.TonalButton"
                     android:layout_marginEnd="8dp"
-                    android:visibility="gone"/>
+                    android:visibility="gone"
+                    android:minHeight="48dp"/>
 
                 <Button
                     android:id="@+id/btnStopScript"
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:text="@string/script_stop"
-                    style="@style/Widget.Material3.Button.OutlinedButton"
-                    android:visibility="gone"/>
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:visibility="gone"
+                    android:minHeight="48dp"/>
             </LinearLayout>
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:gravity="start"
+                android:gravity="center"
                 android:layout_marginTop="8dp">
 
                 <Button
                     android:id="@+id/btnViewLog"
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:text="@string/script_view_log"
-                    style="@style/Widget.Material3.Button.TextButton"
-                    android:layout_marginEnd="8dp"/>
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    android:layout_marginEnd="8dp"
+                    android:minHeight="48dp"/>
 
                 <Button
                     android:id="@+id/btnClearLog"
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:text="@string/script_clear_log"
-                    style="@style/Widget.Material3.Button.TextButton"/>
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    android:minHeight="48dp"/>
             </LinearLayout>
 
         </LinearLayout>

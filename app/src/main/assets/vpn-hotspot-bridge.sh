@@ -7,13 +7,14 @@
 # Logs: /data/local/tmp/vpn-bridge.log
 
 LOG=/data/local/tmp/vpn-bridge.log
-CFG_PRIMARY=/data/adb/service.d/pixel8a.ovpn
+OPENVPN_PID=/data/local/tmp/openvpn.pid
+CFG_PRIMARY={{OVPN_CONFIG_PATH}}
 CFG_FALLBACK=/sdcard/pixel8a.ovpn
 BR=br0
 VPN_IF=tap0
 
-AP_FALLBACKS="ap0 wlan1 softap0 swlan0 wlan0"
-NCM_IF="ncm0"
+AP_FALLBACKS="{{AP_INTERFACES}}"
+NCM_IF="{{NCM_INTERFACE}}"
 
 log(){ echo "[$(date '+%F %T')] $*" >> "$LOG"; }
 exists_if(){ [ -d "/sys/class/net/$1" ]; }
@@ -103,7 +104,7 @@ CFG=""
 if [ -n "$CFG" ]; then
   if ! pgrep -f "openvpn.*--config .*pixel8a\.ovpn" >/dev/null 2>&1; then
     log "starting openvpn with $CFG"
-    openvpn --config "$CFG" --daemon --log /data/local/tmp/openvpn.log
+    openvpn --config "$CFG" --daemon --log /data/local/tmp/openvpn.log --writepid "$OPENVPN_PID"
   else
     log "openvpn already running"
   fi

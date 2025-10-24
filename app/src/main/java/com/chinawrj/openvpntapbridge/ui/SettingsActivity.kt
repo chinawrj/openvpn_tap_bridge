@@ -1,18 +1,25 @@
 package com.chinawrj.openvpntapbridge.ui
 
 import android.app.AlertDialog
+import android.content.Intent
 import android.graphics.Color
+import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import android.view.View
+import android.widget.ArrayAdapter
+import android.widget.AutoCompleteTextView
 import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.chinawrj.openvpntapbridge.R
+import com.chinawrj.openvpntapbridge.core.IfaceReader
 import com.chinawrj.openvpntapbridge.core.ScriptManager
 import com.chinawrj.openvpntapbridge.data.AppPreferences
 import kotlinx.coroutines.Dispatchers
@@ -28,6 +35,10 @@ class SettingsActivity : AppCompatActivity() {
     
     // Interface settings views
     private lateinit var etInterfaceName: EditText
+    private lateinit var etApInterfaces: AutoCompleteTextView
+    private lateinit var etNcmInterface: AutoCompleteTextView
+    private lateinit var tvOvpnPath: TextView
+    private lateinit var btnSelectOvpn: Button
     private lateinit var btnSave: Button
     private lateinit var btnCancel: Button
     
@@ -41,6 +52,13 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var btnStopScript: Button
     private lateinit var btnViewLog: Button
     private lateinit var btnClearLog: Button
+    
+    // Activity Result Launcher for file selection
+    private val selectOvpnLauncher = registerForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        uri?.let { copyOvpnFile(it) }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -53,6 +71,10 @@ class SettingsActivity : AppCompatActivity() {
 
         // Bind interface settings views
         etInterfaceName = findViewById(R.id.etInterfaceName)
+        etApInterfaces = findViewById(R.id.etApInterfaces)
+        etNcmInterface = findViewById(R.id.etNcmInterface)
+        tvOvpnPath = findViewById(R.id.tvOvpnPath)
+        btnSelectOvpn = findViewById(R.id.btnSelectOvpn)
         btnSave = findViewById(R.id.btnSave)
         btnCancel = findViewById(R.id.btnCancel)
 
@@ -69,6 +91,12 @@ class SettingsActivity : AppCompatActivity() {
 
         // Load current configuration
         etInterfaceName.setText(prefs.interfaceName)
+        etApInterfaces.setText(prefs.apInterfaces)
+        etNcmInterface.setText(prefs.ncmInterface)
+        updateOvpnPathDisplay()
+        
+        // Load available network interfaces from system
+        loadNetworkInterfaces()
 
         // Set interface settings listeners
         btnSave.setOnClickListener {
@@ -77,6 +105,10 @@ class SettingsActivity : AppCompatActivity() {
 
         btnCancel.setOnClickListener {
             finish()
+        }
+        
+        btnSelectOvpn.setOnClickListener {
+            selectOvpnFile()
         }
         
         // Set script management listeners
@@ -120,14 +152,28 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun saveSettings() {
         val interfaceName = etInterfaceName.text.toString().trim()
+        val apInterfaces = etApInterfaces.text.toString().trim()
+        val ncmInterface = etNcmInterface.text.toString().trim()
 
         if (interfaceName.isEmpty()) {
             Toast.makeText(this, "Interface name cannot be empty", Toast.LENGTH_SHORT).show()
             return
         }
+        
+        if (apInterfaces.isEmpty()) {
+            Toast.makeText(this, "AP interfaces cannot be empty", Toast.LENGTH_SHORT).show()
+            return
+        }
+        
+        if (ncmInterface.isEmpty()) {
+            Toast.makeText(this, "NCM interface cannot be empty", Toast.LENGTH_SHORT).show()
+            return
+        }
 
         // Save configuration
         prefs.interfaceName = interfaceName
+        prefs.apInterfaces = apInterfaces
+        prefs.ncmInterface = ncmInterface
 
         Toast.makeText(this, getString(R.string.saved_successfully), Toast.LENGTH_SHORT).show()
         finish()
@@ -179,7 +225,17 @@ class SettingsActivity : AppCompatActivity() {
         btnInstallScript.text = getString(R.string.script_installing)
         
         lifecycleScope.launch(Dispatchers.IO) {
-            val result = ScriptManager.install(this@SettingsActivity)
+            // Get user-configured interface values
+            val apInterfaces = prefs.apInterfaces
+            val ncmInterface = prefs.ncmInterface
+            val ovpnConfigPath = prefs.ovpnConfigPath
+            
+            val result = ScriptManager.install(
+                context = this@SettingsActivity,
+                apInterfaces = apInterfaces,
+                ncmInterface = ncmInterface,
+                ovpnConfigPath = ovpnConfigPath
+            )
             
             withContext(Dispatchers.Main) {
                 Toast.makeText(this@SettingsActivity, result.message, Toast.LENGTH_LONG).show()
@@ -251,6 +307,71 @@ class SettingsActivity : AppCompatActivity() {
         }
     }
     
+    /**
+     * Load available network interfaces from the system
+     * and populate dropdown options for interface selection
+     */
+    private fun loadNetworkInterfaces() {
+        Log.d("SettingsActivity", "Starting to load network interfaces...")
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val interfaces = IfaceReader.listAllInterfaces()
+                Log.d("SettingsActivity", "Got ${interfaces.size} interfaces from IfaceReader")
+                
+                withContext(Dispatchers.Main) {
+                    if (interfaces.isNotEmpty()) {
+                        // Set up dropdown adapter with actual system interfaces
+                        val adapter = ArrayAdapter(
+                            this@SettingsActivity,
+                            android.R.layout.simple_dropdown_item_1line,
+                            interfaces
+                        )
+                        
+                        // Apply adapter to AP interfaces field
+                        etApInterfaces.setAdapter(adapter)
+                        etApInterfaces.setOnFocusChangeListener { _, hasFocus ->
+                            if (hasFocus) {
+                                etApInterfaces.showDropDown()
+                            }
+                        }
+                        etApInterfaces.setOnClickListener {
+                            etApInterfaces.showDropDown()
+                        }
+                        
+                        // Apply adapter to NCM interface field
+                        etNcmInterface.setAdapter(adapter)
+                        etNcmInterface.setOnFocusChangeListener { _, hasFocus ->
+                            if (hasFocus) {
+                                etNcmInterface.showDropDown()
+                            }
+                        }
+                        etNcmInterface.setOnClickListener {
+                            etNcmInterface.showDropDown()
+                        }
+                        
+                        Log.d("SettingsActivity", "Successfully set adapters with ${interfaces.size} interfaces")
+                    } else {
+                        Log.w("SettingsActivity", "No network interfaces found")
+                        Toast.makeText(
+                            this@SettingsActivity,
+                            "Failed to load network interfaces",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("SettingsActivity", "Error loading network interfaces", e)
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(
+                        this@SettingsActivity,
+                        "Error loading interfaces: ${e.message}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+        }
+    }
+    
     private fun viewLog() {
         lifecycleScope.launch(Dispatchers.IO) {
             val logContent = ScriptManager.readLog(100)
@@ -285,6 +406,55 @@ class SettingsActivity : AppCompatActivity() {
             
             withContext(Dispatchers.Main) {
                 Toast.makeText(this@SettingsActivity, result.message, Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+    
+    private fun updateOvpnPathDisplay() {
+        val path = prefs.ovpnConfigPath
+        tvOvpnPath.text = if (path.isNotEmpty()) {
+            path
+        } else {
+            getString(R.string.ovpn_not_configured)
+        }
+    }
+    
+    private fun selectOvpnFile() {
+        selectOvpnLauncher.launch(arrayOf("*/*", "application/x-openvpn-profile"))
+    }
+    
+    private fun copyOvpnFile(uri: Uri) {
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val destPath = prefs.getDefaultOvpnPath(this@SettingsActivity)
+                val destFile = java.io.File(destPath)
+                
+                contentResolver.openInputStream(uri)?.use { input ->
+                    destFile.outputStream().use { output ->
+                        input.copyTo(output)
+                    }
+                }
+                
+                // Save path to preferences
+                prefs.ovpnConfigPath = destPath
+                
+                withContext(Dispatchers.Main) {
+                    updateOvpnPathDisplay()
+                    Toast.makeText(
+                        this@SettingsActivity,
+                        getString(R.string.ovpn_file_copied),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            } catch (e: Exception) {
+                Log.e("SettingsActivity", "Failed to copy OVPN file", e)
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(
+                        this@SettingsActivity,
+                        getString(R.string.ovpn_file_error),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
             }
         }
     }
