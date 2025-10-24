@@ -8,6 +8,7 @@
 
 LOG=/data/local/tmp/vpn-bridge.log
 OPENVPN_PID=/data/local/tmp/openvpn.pid
+OPENVPN_STATUS=/data/local/tmp/openvpn-status.log
 CFG_PRIMARY={{OVPN_CONFIG_PATH}}
 CFG_FALLBACK=/sdcard/pixel8a.ovpn
 BR=br0
@@ -104,7 +105,12 @@ CFG=""
 if [ -n "$CFG" ]; then
   if ! pgrep -f "openvpn.*--config .*pixel8a\.ovpn" >/dev/null 2>&1; then
     log "starting openvpn with $CFG"
-    openvpn --config "$CFG" --daemon --log /data/local/tmp/openvpn.log --writepid "$OPENVPN_PID"
+    openvpn --config "$CFG" \
+      --daemon \
+      --log /data/local/tmp/openvpn.log \
+      --writepid "$OPENVPN_PID" \
+      --status "$OPENVPN_STATUS" 5 \
+      --status-version 2
   else
     log "openvpn already running"
   fi

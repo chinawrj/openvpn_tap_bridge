@@ -22,6 +22,9 @@ object ScriptManager {
     // Log file location
     const val LOG_PATH = "/data/local/tmp/vpn-bridge.log"
     
+    // OpenVPN status file location
+    const val OPENVPN_STATUS_PATH = "/data/local/tmp/openvpn-status.log"
+    
     /**
      * Script installation result
      */
@@ -433,6 +436,62 @@ object ScriptManager {
                 message = "Error: ${e.message}"
             )
         }
+    }
+    
+    /**
+     * Read OpenVPN status file
+     * @return Status content or null if not available
+     */
+    fun readOpenvpnStatus(): String? {
+        return try {
+            val cmd = "cat '$OPENVPN_STATUS_PATH' 2>/dev/null"
+            FileReaders.executeInRootShell(cmd)?.takeIf { it.isNotBlank() }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to read OpenVPN status", e)
+            null
+        }
+    }
+    
+    /**
+     * Parse OpenVPN status to extract useful information
+     * @return Map with status information
+     */
+    fun getOpenvpnStatusInfo(): Map<String, String> {
+        val result = mutableMapOf<String, String>()
+        
+        try {
+            val status = readOpenvpnStatus() ?: return result
+            
+            // Status version 2 format (CSV-like)
+            // Lines format: HEADER,CLIENT_LIST,ROUTING_TABLE,GLOBAL_STATS,END
+            val lines = status.lines()
+            
+            for (line in lines) {
+                when {
+                    line.startsWith("Updated,") -> {
+                        // Updated,Thu Oct 24 10:30:45 2025
+                        result["updated"] = line.substringAfter("Updated,")
+                    }
+                    line.startsWith("GLOBAL_STATS") -> {
+                        // GLOBAL_STATS,Max bcast/mcast queue length,0
+                        val parts = line.split(",")
+                        if (parts.size >= 3) {
+                            result[parts[1]] = parts[2]
+                        }
+                    }
+                    line.contains("bytes_received") -> {
+                        result["bytes_received"] = line.substringAfter(",").substringBefore(",")
+                    }
+                    line.contains("bytes_sent") -> {
+                        result["bytes_sent"] = line.substringAfter(",").substringBefore(",")
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to parse OpenVPN status", e)
+        }
+        
+        return result
     }
     
     /**

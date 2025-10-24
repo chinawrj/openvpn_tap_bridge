@@ -43,6 +43,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tvTxSpeed: TextView
     private lateinit var tvRxPackets: TextView
     private lateinit var tvTxPackets: TextView
+    private lateinit var tvRxIdle: TextView
+    private lateinit var tvTxIdle: TextView
     private lateinit var cardBridgePorts: MaterialCardView
     private lateinit var layoutBridgePorts: LinearLayout
     private lateinit var tvMessage: TextView
@@ -110,6 +112,8 @@ class MainActivity : AppCompatActivity() {
         tvTxSpeed = findViewById(R.id.tvTxSpeed)
         tvRxPackets = findViewById(R.id.tvRxPackets)
         tvTxPackets = findViewById(R.id.tvTxPackets)
+        tvRxIdle = findViewById(R.id.tvRxIdle)
+        tvTxIdle = findViewById(R.id.tvTxIdle)
         cardBridgePorts = findViewById(R.id.cardBridgePorts)
         layoutBridgePorts = findViewById(R.id.layoutBridgePorts)
         tvMessage = findViewById(R.id.tvMessage)
@@ -184,6 +188,10 @@ class MainActivity : AppCompatActivity() {
         // Update cumulative traffic (bytes)
         tvRxPackets.text = FormatUtils.formatBytes(model.rxBytes)
         tvTxPackets.text = FormatUtils.formatBytes(model.txBytes)
+        
+        // Update idle time
+        tvRxIdle.text = formatIdleTime(model.rxIdleSeconds)
+        tvTxIdle.text = formatIdleTime(model.txIdleSeconds)
 
         // Update bridge port list
         updateBridgePorts(model)
@@ -253,6 +261,15 @@ class MainActivity : AppCompatActivity() {
     private fun Int.dpToPx(): Int {
         return (this * resources.displayMetrics.density).toInt()
     }
+    
+    // Format idle time (seconds)
+    private fun formatIdleTime(seconds: Int): String {
+        return when {
+            seconds < 60 -> "(${seconds}s)"
+            seconds < 3600 -> "(${seconds / 60}m)"
+            else -> "(${seconds / 3600}h)"
+        }
+    }
 
     private fun showMessage(message: String) {
         tvMessage.text = message
@@ -273,6 +290,8 @@ class MainActivity : AppCompatActivity() {
         tvTxSpeed.alpha = alpha
         tvRxPackets.alpha = alpha
         tvTxPackets.alpha = alpha
+        tvRxIdle.alpha = alpha
+        tvTxIdle.alpha = alpha
     }
 
     private fun requestNotificationPermissionIfNeeded() {

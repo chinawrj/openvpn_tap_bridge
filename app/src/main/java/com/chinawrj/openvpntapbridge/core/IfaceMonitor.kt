@@ -17,6 +17,8 @@ data class UiModel(
     val txBps: Long?,             // Transmit rate (bps), null for first sampling
     val rxBytes: Long,            // Cumulative received bytes
     val txBytes: Long,            // Cumulative transmitted bytes
+    val rxIdleSeconds: Int,       // Seconds since last RX data change
+    val txIdleSeconds: Int,       // Seconds since last TX data change
     val bridgePorts: List<BridgePort>  // All ports of the bridge
 )
 
@@ -33,6 +35,12 @@ class IfaceMonitor(
     private val rateMeter = RateMeter()
     private var job: Job? = null
     private var wasExists = false
+    
+    // Track last data change time
+    private var lastRxBytes: Long = 0
+    private var lastTxBytes: Long = 0
+    private var lastRxChangeTime: Long = System.currentTimeMillis()
+    private var lastTxChangeTime: Long = System.currentTimeMillis()
 
     /**
      * Start monitoring
@@ -55,6 +63,11 @@ class IfaceMonitor(
                     Log.d(TAG, "Interface state changed: exists=${snapshot.exists}")
                     rateMeter.reset()
                     wasExists = snapshot.exists
+                    // Reset idle tracking when interface state changes
+                    lastRxBytes = snapshot.rxBytes
+                    lastTxBytes = snapshot.txBytes
+                    lastRxChangeTime = now
+                    lastTxChangeTime = now
                 }
 
                 // Calculate rate
@@ -64,6 +77,19 @@ class IfaceMonitor(
                     rateMeter.reset()
                     null
                 }
+                
+                // Track idle time (seconds since last data change)
+                if (snapshot.rxBytes != lastRxBytes) {
+                    lastRxBytes = snapshot.rxBytes
+                    lastRxChangeTime = now
+                }
+                if (snapshot.txBytes != lastTxBytes) {
+                    lastTxBytes = snapshot.txBytes
+                    lastTxChangeTime = now
+                }
+                
+                val rxIdleSeconds = ((now - lastRxChangeTime) / 1000).toInt()
+                val txIdleSeconds = ((now - lastTxChangeTime) / 1000).toInt()
 
                 // Build UI model
                 val uiModel = UiModel(
@@ -77,6 +103,8 @@ class IfaceMonitor(
                     txBps = bps?.second,
                     rxBytes = snapshot.rxBytes,
                     txBytes = snapshot.txBytes,
+                    rxIdleSeconds = rxIdleSeconds,
+                    txIdleSeconds = txIdleSeconds,
                     bridgePorts = snapshot.bridgePorts
                 )
 

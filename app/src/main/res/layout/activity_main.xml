@@ -251,6 +251,15 @@
                         android:layout_weight="1"
                         android:text="@string/rx_packets_label"
                         android:textSize="14sp"/>
+                    
+                    <TextView
+                        android:id="@+id/tvRxIdle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textSize="12sp"
+                        android:layout_marginEnd="8dp"
+                        android:textColor="?android:attr/textColorSecondary"
+                        tools:text="(5s)"/>
 
                     <TextView
                         android:id="@+id/tvRxPackets"
@@ -273,6 +282,15 @@
                         android:layout_weight="1"
                         android:text="@string/tx_packets_label"
                         android:textSize="14sp"/>
+                    
+                    <TextView
+                        android:id="@+id/tvTxIdle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textSize="12sp"
+                        android:layout_marginEnd="8dp"
+                        android:textColor="?android:attr/textColorSecondary"
+                        tools:text="(12s)"/>
 
                     <TextView
                         android:id="@+id/tvTxPackets"
