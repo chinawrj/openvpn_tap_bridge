@@ -24,7 +24,7 @@ object FileReaders {
     /**
      * Initialize root shell session (call su only once)
      */
-    private fun initRootShell(): Boolean {
+    internal fun initRootShell(): Boolean {
         if (rootProcess != null && rootProcess?.isAlive == true) {
             return true
         }
@@ -48,7 +48,7 @@ object FileReaders {
     /**
      * Execute command using persistent root shell
      */
-    private fun executeInRootShell(command: String): String? {
+    internal fun executeInRootShell(command: String): String? {
         if (!useRoot && !initRootShell()) {
             return null
         }

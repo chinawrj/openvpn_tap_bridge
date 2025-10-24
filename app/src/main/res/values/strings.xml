@@ -39,4 +39,21 @@
     <string name="save">Save</string>
     <string name="cancel">Cancel</string>
     <string name="saved_successfully">Settings Saved</string>
+    
+    <!-- Script Management -->
+    <string name="script_management_title">VPN Bridge Script</string>
+    <string name="script_status_label">Status:</string>
+    <string name="script_installed">Installed</string>
+    <string name="script_not_installed">Not Installed</string>
+    <string name="script_running">Running</string>
+    <string name="script_stopped">Stopped</string>
+    <string name="script_path_label">Path:</string>
+    <string name="script_install">Install Script</string>
+    <string name="script_uninstall">Uninstall</string>
+    <string name="script_run">Run Script</string>
+    <string name="script_stop">Stop Script</string>
+    <string name="script_view_log">View Log</string>
+    <string name="script_clear_log">Clear Log</string>
+    <string name="script_installing">Installing...</string>
+    <string name="script_running_action">Running...</string>
 </resources>
