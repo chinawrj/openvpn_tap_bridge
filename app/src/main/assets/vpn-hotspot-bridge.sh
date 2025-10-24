@@ -125,6 +125,18 @@ else
   log "ERROR: no .ovpn found at $CFG_PRIMARY or $CFG_FALLBACK"
 fi
 
+# Start WiFi Hotspot with device-specific defaults
+DEVICE_MODEL="$(getprop ro.product.model | tr -d ' ')"
+DEFAULT_SSID="${DEVICE_MODEL:-AndroidHotspot}"
+DEFAULT_PASSPHRASE="goodlife"
+
+log "starting hotspot with SSID: $DEFAULT_SSID on 5GHz band"
+if cmd wifi start-softap "$DEFAULT_SSID" wpa2 "$DEFAULT_PASSPHRASE" -b 5 >/dev/null 2>&1; then
+  log "hotspot started successfully with SSID: $DEFAULT_SSID on 5GHz band"
+else
+  log "failed to start hotspot, will proceed with bridge setup"
+fi
+
 ensure_bridge
 
 LAST_AP_IFIDX=""
