@@ -19,6 +19,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.chinawrj.openvpntapbridge.R
+import com.chinawrj.openvpntapbridge.core.FileReaders
 import com.chinawrj.openvpntapbridge.core.IfaceReader
 import com.chinawrj.openvpntapbridge.core.ScriptManager
 import com.chinawrj.openvpntapbridge.data.AppPreferences
@@ -435,6 +436,9 @@ class SettingsActivity : AppCompatActivity() {
                     }
                 }
                 
+                // Also copy to boot-accessible location for early boot VPN startup
+                copyToBootLocation(destPath)
+                
                 // Save path to preferences
                 prefs.ovpnConfigPath = destPath
                 
@@ -456,6 +460,30 @@ class SettingsActivity : AppCompatActivity() {
                     ).show()
                 }
             }
+        }
+    }
+    
+    private suspend fun copyToBootLocation(sourcePath: String) {
+        try {
+            // Create the boot-accessible directory and copy the config file there
+            val bootConfigPath = "/data/adb/modules/openvpn_tap_bridge/client.ovpn"
+            val commands = arrayOf(
+                "mkdir -p /data/adb/modules/openvpn_tap_bridge",
+                "cp '$sourcePath' '$bootConfigPath'",
+                "chmod 644 '$bootConfigPath'"
+            )
+            
+            for (command in commands) {
+                val result = withContext(Dispatchers.IO) {
+                    FileReaders.executeInRootShell(command)
+                }
+                Log.d("SettingsActivity", "Boot config command: $command, result: $result")
+            }
+            
+            Log.i("SettingsActivity", "OpenVPN config copied to boot location: $bootConfigPath")
+        } catch (e: Exception) {
+            Log.w("SettingsActivity", "Failed to copy config to boot location", e)
+            // Don't fail the main operation if boot copy fails
         }
     }
 }

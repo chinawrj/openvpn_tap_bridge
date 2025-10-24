@@ -1,16 +1,23 @@
 #!/system/bin/sh
 # vpn-hotspot-bridge.sh — Pixel 8a (root)
-# Bridge OpenVPN TAP <-> Wi-Fi AP + ncm0 using brctl (no ip link master).
+# Bridge OpenVPN TAP <-> Wi-Fi AP + ncm0 using ip link.
 # - Adds AP (wlan1/ap0/softap0) & ncm0 to br0 when UP
 # - Removes them from br0 when DOWN or missing
 # - Starts OpenVPN (daemon); expects client .ovpn already set (e.g., port 11194)
 # Logs: /data/local/tmp/vpn-bridge.log
 
+# Try to re-exec with bash if available, otherwise continue with current shell
+if [ "$BASH_VERSION" = "" ] && [ -x "/system/bin/bash" ]; then
+    exec /system/bin/bash "$0" "$@"
+elif [ "$BASH_VERSION" = "" ] && [ -x "/bin/bash" ]; then
+    exec /bin/bash "$0" "$@"
+fi
+
 LOG=/data/local/tmp/vpn-bridge.log
 OPENVPN_PID=/data/local/tmp/openvpn.pid
 OPENVPN_STATUS=/data/local/tmp/openvpn-status.log
 CFG_PRIMARY={{OVPN_CONFIG_PATH}}
-CFG_FALLBACK=/sdcard/pixel8a.ovpn
+CFG_FALLBACK=/data/adb/modules/openvpn_tap_bridge/client.ovpn
 BR=br0
 VPN_IF=tap0
 
@@ -25,8 +32,9 @@ is_up(){ [ "$(cat /sys/class/net/$1/operstate 2>/dev/null)" = "up" ]; }
 enslaved_to_br(){
   IF="$1"
   [ -z "$IF" ] && return 1
-  if [ -L "/sys/class/net/$IF/brport/bridge" ]; then
-    CUR="$(basename "$(readlink -f "/sys/class/net/$IF/brport/bridge")" 2>/dev/null)"
+  # Check for master via sysfs. ip link show is another option but this is reliable.
+  if [ -L "/sys/class/net/$IF/master" ]; then
+    CUR="$(basename "$(readlink -f "/sys/class/net/$IF/master")" 2>/dev/null)"
     [ "$CUR" = "$BR" ] && return 0
   fi
   return 1
@@ -35,7 +43,7 @@ enslaved_to_br(){
 # Detect current SoftAP iface by iw (type AP), else fallbacks
 find_ap_if(){
   if command -v iw >/dev/null 2>&1; then
-    AP="$(iw dev 2>/dev/null | awk '$1=="Interface"{i=$2} $1=="type"&&$2=="AP"{print i}' | head -n1)"
+    AP="$(iw dev 2>/dev/null | awk \'$1=="Interface"{i=$2} $1=="type"&&$2=="AP"{print i}\' | head -n1)"
     [ -n "$AP" ] && { echo "$AP"; return 0; }
   fi
   for C in $AP_FALLBACKS; do
@@ -44,52 +52,50 @@ find_ap_if(){
   return 1
 }
 
-# Bridge ops (brctl-only)
+# Bridge ops (ip link)
 ensure_bridge(){
   if ! exists_if "$BR"; then
-    log "creating $BR with brctl"
-    brctl addbr "$BR" 2>>"$LOG"
-    brctl stp "$BR" off 2>>"$LOG"
+    log "creating $BR with ip link"
+    ip link add name "$BR" type bridge 2>>"$LOG"
+    ip link set dev "$BR" type bridge stp_state 0 2>>"$LOG"
   fi
-  if command -v ifconfig >/dev/null 2>&1; then
-    ifconfig "$BR" up 2>/dev/null
-  fi
+  ip link set dev "$BR" up 2>/dev/null
 }
 
-add_to_bridge_brctl(){
+add_to_bridge(){
   IF="$1"
   [ -z "$IF" ] && { log "add_to_bridge: empty IF"; return 1; }
   if enslaved_to_br "$IF"; then
     return 0
   fi
-  if brctl addif "$BR" "$IF" 2>>"$LOG"; then
-    log "enslaved $IF -> $BR via brctl"
+  if ip link set dev "$IF" master "$BR" 2>>"$LOG"; then
+    log "enslaved $IF -> $BR via ip link"
   else
     RC=$?
-    log "brctl addif failed for $IF (rc=$RC)"
+    log "ip link set master failed for $IF (rc=$RC)"
   fi
 }
 
-remove_from_bridge_brctl(){
+remove_from_bridge(){
   IF="$1"
   [ -z "$IF" ] && return 0
   if enslaved_to_br "$IF"; then
-    if brctl delif "$BR" "$IF" 2>>"$LOG"; then
-      log "removed $IF from $BR via brctl (down/missing)"
+    if ip link set dev "$IF" nomaster 2>>"$LOG"; then
+      log "removed $IF from $BR via ip link (down/missing)"
     else
       RC=$?
-      log "brctl delif failed for $IF (rc=$RC)"
+      log "ip link set nomaster failed for $IF (rc=$RC)"
     fi
   fi
 }
 
 dump_status(){
   {
-    echo "===== brctl show ====="; brctl show
-    echo "===== ifconfig $BR ====="; ifconfig "$BR" 2>/dev/null || true
+    echo "===== bridge link show ====="; bridge link show 2>/dev/null
+    echo "===== ip addr show $BR ====="; ip addr show dev "$BR" 2>/dev/null || true
     APIF_NOW="$(find_ap_if)"; [ -n "$APIF_NOW" ] && { echo "===== $APIF_NOW operstate ====="; cat /sys/class/net/$APIF_NOW/operstate 2>/dev/null; }
     exists_if "$NCM_IF" && { echo "===== $NCM_IF operstate ====="; cat /sys/class/net/$NCM_IF/operstate 2>/dev/null; }
-    exists_if "$VPN_IF" && { echo "===== ifconfig $VPN_IF ====="; ifconfig "$VPN_IF"; }
+    exists_if "$VPN_IF" && { echo "===== ip addr show $VPN_IF ====="; ip addr show dev "$VPN_IF"; }
     echo "======================"
   } >>"$LOG" 2>&1
 }
@@ -103,14 +109,15 @@ CFG=""
 [ -f "$CFG_PRIMARY" ] && CFG="$CFG_PRIMARY"
 [ -z "$CFG" ] && [ -f "$CFG_FALLBACK" ] && CFG="$CFG_FALLBACK"
 if [ -n "$CFG" ]; then
-  if ! pgrep -f "openvpn.*--config .*pixel8a\.ovpn" >/dev/null 2>&1; then
+  if ! pgrep -f "openvpn.*--config.*$CFG" >/dev/null 2>&1; then
     log "starting openvpn with $CFG"
     openvpn --config "$CFG" \
       --daemon \
       --log /data/local/tmp/openvpn.log \
       --writepid "$OPENVPN_PID" \
       --status "$OPENVPN_STATUS" 5 \
-      --status-version 2
+      --status-version 2 \
+      --tmp-dir /data/local/tmp
   else
     log "openvpn already running"
   fi
@@ -138,15 +145,15 @@ while true; do
       LAST_AP_IFIDX="$IFIDX"
     fi
     if [ "$OPSTATE" = "up" ]; then
-      add_to_bridge_brctl "$APIF"
+      add_to_bridge "$APIF"
     else
-      remove_from_bridge_brctl "$APIF"
+      remove_from_bridge "$APIF"
       log "AP=$APIF not UP (operstate=$OPSTATE) -> ensured not in $BR"
     fi
   else
     # missing entirely: ensure removed if previously enslaved
     for C in $AP_FALLBACKS; do
-      exists_if "$C" || remove_from_bridge_brctl "$C"
+      exists_if "$C" || remove_from_bridge "$C"
     done
     log "AP iface not present (yet)"
   fi
@@ -160,13 +167,13 @@ while true; do
       LAST_NCM_IFIDX="$NIFIDX"
     fi
     if [ "$NOPSTATE" = "up" ]; then
-      add_to_bridge_brctl "$NCM_IF"
+      add_to_bridge "$NCM_IF"
     else
-      remove_from_bridge_brctl "$NCM_IF"
+      remove_from_bridge "$NCM_IF"
       log "$NCM_IF not UP (operstate=$NOPSTATE) -> ensured not in $BR"
     fi
   else
-    remove_from_bridge_brctl "$NCM_IF"
+    remove_from_bridge "$NCM_IF"
     log "$NCM_IF not present (yet)"
   fi
 
@@ -177,10 +184,8 @@ while true; do
       log "$VPN_IF ifindex now $IFIDX (was $LAST_TAP_IFIDX)"
       LAST_TAP_IFIDX="$IFIDX"
     fi
-    add_to_bridge_brctl "$VPN_IF"
-    if command -v ifconfig >/dev/null 2>&1; then
-      ifconfig "$VPN_IF" up 2>/dev/null
-    fi
+    add_to_bridge "$VPN_IF"
+    ip link set dev "$VPN_IF" up 2>/dev/null
   else
     log "$VPN_IF not present (yet)"
   fi
